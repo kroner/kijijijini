@@ -46,7 +46,7 @@ class ColumnSelectTransformer(base.BaseEstimator, base.TransformerMixin):
     def transform(self, X):
         return [parse(row['text']) for row in X]
 
-
+'''
 def top_words(s, limit=None, word_list=None, sorted=True):
 	if word_list is None:
 		word_counts = cln.defaultdict(int)
@@ -64,7 +64,7 @@ def top_words(s, limit=None, word_list=None, sorted=True):
 		limit = min(limit, len(word_counts))
 		top = heapq.nlargest(limit, top, key=lambda w : w[1])
 	return top
-
+'''
 
 class WordEncoder(base.BaseEstimator, base.TransformerMixin):
 
@@ -75,7 +75,7 @@ class WordEncoder(base.BaseEstimator, base.TransformerMixin):
 
 	def fit(self, X, y=None):
 		data = X.iloc[:,0].array
-		top = top_words(data, limit=self.limit, sorted=False)
+		top = [('hello',1)]#top_words(data, limit=self.limit, sorted=False)
 		#print(top[:50])
 		self.word_list = [t[0] for t in top]
 		return self
@@ -84,7 +84,7 @@ class WordEncoder(base.BaseEstimator, base.TransformerMixin):
 		data = X.iloc[:,0].array
 		Xt = list()
 		for text in data:
-			cs = top_words([text], word_list=self.word_list, sorted=False)
+			cs = [('hello', 1)]#top_words([text], word_list=self.word_list, sorted=False)
 			if self.count:
 				cs = [c[1] for c in cs]
 			else:
