@@ -7,12 +7,12 @@ app = Flask(__name__)
 @app.route('/', methods=['GET', 'POST'])
 def index():
 	if request.method == 'POST':
-		Xdict = {
+		sample_X = {
 			'title':request.form['title'],
 			'description':request.form['description'],
 			'item':'bed-mattress'
 			}
-		price = model.predict_price(Xdict)
+		price = model.predict_price(sample_X)
 		price_str = '$' + '{:.0d}'.format(price)
 	else:
 		price_str = ''

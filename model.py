@@ -7,6 +7,7 @@ import dill
 from datetime import datetime
 from sklearn import base
 from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import SGDRegressor
 from sklearn import compose
 from sklearn import metrics
 from sklearn.pipeline import FeatureUnion
@@ -14,12 +15,59 @@ from sklearn.pipeline import Pipeline
 from sklearn.utils import shuffle
 from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import HashingVectorizer
+
 
 import categories
 import scrape
 
+class ModelTransformer(base.BaseEstimator, base.TransformerMixin):
+    def __init__(self, est):
+        self.est = est
+    def fit(self, X, y):
+        self.est.fit(X,y)
+        return self
+    def transform(self, X):
+        y = self.est.predict(X)
+        return [[a] for a in y]
+
+def parse(text):
+            text = text.translate(str.maketrans('', '', string.punctuation))
+            #return [word.lower() for word in text.split()]
+            return text.lower()
+
+class ColumnSelectTransformer(base.BaseEstimator, base.TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X):
+        return [parse(row['text']) for row in X]
+
+
+def top_words(s, limit=None, word_list=None, sorted=True):
+	if word_list is None:
+		word_counts = cln.defaultdict(int)
+	else:
+		word_counts = dict([(w,0) for w in word_list])
+	for text in s:
+		words = [word.lower() for word in text.split()]
+		for word in words:
+			if word_list is None or word in word_counts:
+				word_counts[word] += 1
+	top = [pair for pair in word_counts.items() if pair[0][0] != '$' and pair[0] != 'free']
+	if limit is None and sorted:
+		top.sort(key=lambda w : w[1])
+	if limit is not None:
+		limit = min(limit, len(word_counts))
+		top = heapq.nlargest(limit, top, key=lambda w : w[1])
+	return top
+
 
 class WordEncoder(base.BaseEstimator, base.TransformerMixin):
+
 	def __init__(self, limit=None, word_list=None, count=False):
 		self.limit = limit
 		self.word_list = word_list
@@ -43,46 +91,6 @@ class WordEncoder(base.BaseEstimator, base.TransformerMixin):
 				cs = [int(c[1] > 0) for c in cs]
 			Xt.append(cs)
 		return pd.DataFrame(Xt)
-
-
-class CategoryEst(base.BaseEstimator):
-	def __init__(self, title_lim=None, desc_lim=None):
-		colt = compose.ColumnTransformer([
-			('item', OneHotEncoder(), ['item']),
-			#('const', 'passthrough', ['const']),
-			('title', WordEncoder(limit=title_lim), ['title']),
-			('description', WordEncoder(limit=desc_lim), ['description'])])
-		est = Pipeline([
-	        ('transform', colt),
-	        ('est', LinearRegression())
-	    ])
-		self.est = est
-
-	def fit(self, X,y):
-		self.est.fit(X,y)
-		return None
-
-	def predict(self, X):
-		return self.est.predict(X)
-
-
-def top_words(s, limit=None, word_list=None, sorted=True):
-	if word_list is None:
-		word_counts = cln.defaultdict(int)
-	else:
-		word_counts = dict([(w,0) for w in word_list])
-	for text in s:
-		words = [word.lower() for word in text.split()]
-		for word in words:
-			if word_list is None or word in word_counts:
-				word_counts[word] += 1
-	top = [pair for pair in word_counts.items() if pair[0][0] != '$' and pair[0] != 'free']
-	if limit is None and sorted:
-		top.sort(key=lambda w : w[1])
-	if limit is not None:
-		limit = min(limit, len(word_counts))
-		top = heapq.nlargest(limit, top, key=lambda w : w[1])
-	return top
 
 
 def cross_validate(X,y,est):
@@ -123,9 +131,19 @@ def prepare_cat_data(cat):
 
 
 def train_model(cat):
-	print('training...')
+	title_lim = 400
+	desc_lim = 550
+	print('training... ', end='')
 	(X,y) = prepare_cat_data(cat)
-	est = CategoryEst(title_lim=400, desc_lim=550)
+	colt = compose.ColumnTransformer([
+		('item', OneHotEncoder(), ['item']),
+		#('const', 'passthrough', ['const']),
+		('title', WordEncoder(limit=title_lim), ['title']),
+		('description', WordEncoder(limit=desc_lim), ['description'])])
+	est = Pipeline([
+        ('transform', colt),
+        ('est', LinearRegression())
+    ])
 	est.fit(X,y)
 	model_path = open('est-' + cat + '.pkd', 'wb')
 	dill.dump(est, model_path)
@@ -157,10 +175,10 @@ def predict_price(Xdict):
 		'retreived':[datetime.now()],
 		'item':[Xdict['item']]
 		})
-	#try:
-	est = load_model(cat)
-	#except FileNotFoundError:
-	#	est = train_model(cat)
+	try:
+		est = load_model(cat)
+	except FileNotFoundError:
+		est = train_model(cat)
 	sample_y = est.predict(sample_X)[0]
 	price = math.exp(sample_y)-25
 	return price
@@ -168,7 +186,7 @@ def predict_price(Xdict):
 
 
 if __name__ == '__main__':
-	est = train_model('furniture')
+	train_model('furniture')
 	'''
 	coefs = pipe.named_steps.est.coef_
 	#print(coefs[:50])
