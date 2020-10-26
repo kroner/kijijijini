@@ -1,17 +1,22 @@
 from flask import Flask, render_template, request, redirect
-from bokeh.plotting import figure
-from bokeh.embed import components
-import stocks
+import model
+
 
 app = Flask(__name__)
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-	index = 'IBM'
-	if 'index' in request.args.keys():
-		index = request.args['index']
-	script, div = stocks.make_components(index)
-	return render_template('index.html',stock_js=script,stock_div=div)
+	if request.method == 'POST':
+        Xdict = {
+			'title':request.form['title'],
+			'description':request.form['description'],
+			'item':'bed-mattress'
+			}
+		price = model.predict_price(Xdict)
+		price_str = '$' + '{:.0d}'.format(price)
+    else:
+        price_str = ''
+	return render_template('index.html',price=price_str)
 
 @app.route('/about')
 def about():

@@ -45,7 +45,7 @@ def page_df(response):
 				price = float(re.sub(r'[^\d\-.]', '', price))
 			except (TypeError, ValueError):
 				continue
-		index.append(div['data-listing-id'])
+		index.append(int(div['data-listing-id']))
 		info['url'].append(div['data-vip-url'])
 		info['price'].append(price)
 		info['title'].append(extract_text(div.find('div', class_='title')))
@@ -95,7 +95,7 @@ def scrape(item, location, start_page=0, end_page=101, file_path=None):
 		out_file = open(file_path, 'w')
 	listings = listing_count(item, location)
 	end_page = min([(listings-1)//40 + 1, end_page])
-	
+
 	print(item, listings, flush=True)
 
 	page_dfs = []
@@ -110,7 +110,7 @@ def scrape(item, location, start_page=0, end_page=101, file_path=None):
 			if fail_count >= FAIL_CAP:
 				print('stopped at page {0}.'.format(page), flush=True)
 				break
-		else: 
+		else:
 			df.to_csv(out_file, header=(page == 0))
 			page_dfs.append(df)
 	out_file.close()
@@ -129,6 +129,5 @@ def collect_all(save_path, location, item=None, start_item=0):
 
 if __name__ == '__main__':
 	location = 'city-of-toronto'
-	save_path = '/home/robert/Documents/DataSets/kijiji_data/'
+	save_path = 'data/'
 	collect_all(save_path, location, start_item=141)
-	

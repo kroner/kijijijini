@@ -3,6 +3,7 @@ import pandas as pd
 import math
 import collections as cln
 import heapq
+import dill
 from datetime import datetime
 from sklearn import base
 from sklearn.linear_model import LinearRegression
@@ -61,8 +62,29 @@ class WordEncoder(base.BaseEstimator, base.TransformerMixin):
 		return pd.DataFrame(Xt)
 
 
+class CategoryEst(base.BaseEstimator):
+	def __init__(self, title_lim=None, desc_lim=None):
+		colt = compose.ColumnTransformer([
+			('item', OneHotEncoder(), ['item']),
+			#('const', 'passthrough', ['const']),
+			('title', WordEncoder(limit=title_lim), ['title']),
+			('description', WordEncoder(limit=desc_lim), ['description'])])
+		est = Pipeline([
+	        ('transform', colt),
+	        ('est', LinearRegression())
+	    ])
+		self.est = est
+
+	def fit(X,y):
+		self.est.fit(X,y)
+
+	def predict(X):
+		return self.est.predict(X)
+
+
+# read csv for a single item to a dataframe
 def read_in_data(item):
-	save_path = '/home/robert/Documents/DataSets/kijiji_data/'
+	save_path = 'data/'
 	file_path = save_path + 'kdat-' + item + '.csv'
 	data_file = open(file_path, 'r')
 	df = pd.read_csv(data_file)
@@ -85,48 +107,62 @@ def print_nice(coefs,file=sys.stdout):
 		value = (math.exp(pair[1]) - 1)
 		#print(pair[1])
 		print('{:15s} {:-4.0%}'.format(string,value),file=file)
+	return None
 
 
-if __name__ == '__main__':
-	items = ['chair-recliner',
-			 'bed-mattress',
-			 'couch-futon',
-			 'dining-table-set',
-			 'coffee-table-ottoman',
-			 'hutch-display-cabinet',
-			 'dresser-wardrobe',
-			 'furniture-other-table',
-			 'bookcase-shelves',
-			 'other-furniture',
-			 'buy-sell-desks',
-			 'tv-table-entertainment-unit']
+# read in all the data for a category and return X and y
+def prepare_cat_data(cat):
+	items = categories.categories[cat]
 	price_func = lambda x : math.log(x+25)
-	title_lim = 400
-	desc_lim = 550
 	#price_func = lambda x : math.sqrt(x)
 	dfs = []
 	for item in items:
 		df = read_in_data(item)
-		df['category'] = item
+		df['item'] = item
 		dfs.append(df)
 	data = pd.concat(dfs)
 	X = data.drop('price', axis=1)
 	X = X.drop(X.columns[0], axis=1)
 	y = data['price'].apply(price_func)
+	return (X,y)
 
-	colt = compose.ColumnTransformer([
-		('cat', OneHotEncoder(), ['category']),
-		#('const', 'passthrough', ['const']),
-		('title', WordEncoder(limit=title_lim), ['title']),
-		('description', WordEncoder(limit=desc_lim), ['description'])])
-	pipe = Pipeline([
-        ('transform', colt),
-        ('est', LinearRegression())
-    ])
-	pipe.fit(X,y)
-	y_pred = pipe.predict(X)
+
+# predict the price for a dict with 'title', 'description', 'item'
+def predict_price(Xdict):
+	cat = categories.item_category[Xdict['item']]
+	sample_X = pd.DataFrame({
+		'url':[''],
+		'title':[Xdict['title']],
+		'distance':[''],
+		'description':[Xdict['description']],
+		'location':[''],
+		'time_offset':[datetime.now()],
+		'retreived':[datetime.now()],
+		'item':[Xdict['item']]
+		})
+	try:
+		model_path = open('est-' + cat + '.pkd', 'r')
+    	est = dill.load(model_path)
+		model_path.close()
+	except FileNotFoundError:
+		(X,y) = prepare_cat_data(cat)
+		est = CategoryEst(title_lim=400, desc_lim=550)
+		est.fit(X,y)
+		model_path = open('est-' + cat + '.pkd', 'wb')
+		dill.dump(est, model_path)
+		model_path.close()
+	sample_y = est.predict(sample_X)[0]
+	price = math.exp(sample_y)-25
+	return price
+
+
+
+if __name__ == '__main__':
+	est = category_est('furniture')
+	y_pred = est.predict(X)
 	print(len(data.index))
 	print(metrics.r2_score(y,y_pred))
+	'''
 	coefs = pipe.named_steps.est.coef_
 	#print(coefs[:50])
 	col_trans = pipe.named_steps.transform.named_transformers_
@@ -148,9 +184,10 @@ if __name__ == '__main__':
 	#print_nice(title_coefs[:50])
 	#print(cross_validate(X,y,pipe))
 	print(X)
+	'''
 	title = '18" tall metal bed frame'
 	desc = 'Selling an 18" tall metal bed frame. Comes apart at corners for easy assembly. Great for condo as the height is perfect for under bed storage bins or luggate. Frame is in near perfect condition.  Comes with wooden slats.'
-	sample_X = pd.DataFrame({'url':[''], 'title':[title], 'distance':[''], 'description':[desc], 'location':[''], 'time_offset':[datetime.now()], 'retreived':[datetime.now()], 'category':['bed-mattress']})
+	sample_X = {'title':title, 'description':desc, 'item':'bed-mattress'}
 	print(sample_X)
-	sample_y = pipe.predict(sample_X)[0]
-	print(math.exp(sample_y)-25)
+	print(predict_price(sample_X))
+	'''
