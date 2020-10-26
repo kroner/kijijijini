@@ -44,9 +44,9 @@ class ColumnSelectTransformer(base.BaseEstimator, base.TransformerMixin):
     def fit(self, X, y=None):
         return self
     def transform(self, X):
-        return [parse(row['text']) for row in X]
+        return X.iloc[:, 0].tolist()
 
-'''
+
 def top_words(s, limit=None, word_list=None, sorted=True):
 	if word_list is None:
 		word_counts = cln.defaultdict(int)
@@ -64,9 +64,10 @@ def top_words(s, limit=None, word_list=None, sorted=True):
 		limit = min(limit, len(word_counts))
 		top = heapq.nlargest(limit, top, key=lambda w : w[1])
 	return top
-'''
+
 
 class WordEncoder(base.BaseEstimator, base.TransformerMixin):
+	import pandas as pd
 
 	def __init__(self, limit=None, word_list=None, count=False):
 		self.limit = limit
@@ -135,15 +136,36 @@ def train_model(cat):
 	desc_lim = 550
 	print('training... ', end='')
 	(X,y) = prepare_cat_data(cat)
+	'''
 	colt = compose.ColumnTransformer([
 		('item', OneHotEncoder(), ['item']),
 		#('const', 'passthrough', ['const']),
 		('title', WordEncoder(limit=title_lim), ['title']),
-		('description', WordEncoder(limit=desc_lim), ['description'])])
+		('description', WordEncoder(limit=desc_lim), ['description'])
+		])
 	est = Pipeline([
         ('transform', colt),
         ('est', LinearRegression())
-    ])
+    	])
+	'''
+	tfidf_title = Pipeline([
+		('cst', ColumnSelectTransformer()),
+	    ('tfidf', TfidfVectorizer()),
+		])
+	tfidf_desc = Pipeline([
+		('cst', ColumnSelectTransformer()),
+	    ('tfidf', TfidfVectorizer()),
+		])
+	colt = compose.ColumnTransformer([
+		('item', OneHotEncoder(), ['item']),
+		('title', tfidf_title, ['title']),
+		('description', tfidf_desc, ['description'])
+		])
+	est = Pipeline([
+		('trans', colt),
+		('est', SGDRegressor())
+		])
+
 	est.fit(X,y)
 	model_path = open('est-' + cat + '.pkd', 'wb')
 	dill.dump(est, model_path)
