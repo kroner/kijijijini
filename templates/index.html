@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Skeleton application demoing Heroku and Flask integration.">
+    <meta name="author" content="@gotoariel">
+    <!-- <link rel="icon" href="favicon.ico"> -->
+
+    <title>kijijijini - appraise your item!</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12 text-left">
+          <br>
+          <form action="/" id="listing" method="post">
+            <ul>
+            <li><label>Item Type:</label>
+             <select id="item">
+               <option value = "indoor-decor-accent">indoor-decor-accent</option>
+               <option value = "kitchen-dining">kitchen-dining</option>
+               <option value = "indoor-lighting-fan">indoor-lighting-fan</option>
+               <option value = "rug-carpet-runner">rug-carpet-runner</option>
+               <option value = "home-indoor-other">home-indoor-other</option>
+               <option value = "storage-organization">storage-organization</option>
+               <option value = "bathware-bathroom">bathware-bathroom</option>
+               <option value = "bedding">bedding</option>
+               <option value = "window-treatment">window-treatment</option>
+               <option value = "holiday-event-seasonal">holiday-event-seasonal</option>
+               <option value = "fireplace-firewood">fireplace-firewood</option>
+             </select></li>
+            <li><label for="fname">Title:</label>
+            <input type="text" id="title" name="title"></li>
+            <li><label for="fname">Description:</label>
+            <textarea name="description" form="listing"></textarea></li>
+            <input type="submit" value="Submit">
+            </ul>
+          </form>
+          <br>
+          Suggested price: {{ price }}
+          <!--
+          <ul>
+            <li><a href="/about">About</a></li>
+            <li><a target="_blank" href="https://www.heroku.com/">Heroku</a></li>
+            <li><a target="_blank" href="http://flask.pocoo.org/">Flask</a></li>
+            <li><a target="_blank" href="http://jinja.pocoo.org/docs/2.9/">Jinja2</a></li>
+            <li><a target="_blank" href="http://getbootstrap.com/">Bootstrap</a></li>
+          </ul>
+        -->
+        </div>
+      </div>
+    </div>
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  </body>
+</html>
