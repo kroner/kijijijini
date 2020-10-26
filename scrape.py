@@ -15,6 +15,7 @@ url = 'https://www.kijiji.ca/b-{0}/{1}/page-{2}/c{3}l{4}'
 SLEEP_TIME = 60 # seconds to wait if no results are returned
 FAIL_CAP   =  1 # max number of failures before ending
 TRIES      =  5 # number of times to try the same query before failing
+SAVE_PATH  = 'data/'
 
 location_codes = {
 	'city-of-toronto':'1700273'
@@ -119,15 +120,20 @@ def scrape(item, location, start_page=0, end_page=101, file_path=None):
 		return pd.concat(page_dfs)
 
 
-def collect_all(save_path, location, item=None, start_item=0):
+def collect_all(location, item=None, start_item=0, save_path=SAVE_PATH):
 	if item == None: items = [item[0] for item in categories.item_list][start_item:]
 	else: items = [item]
 	for item in items:
 		file_path = save_path + 'kdat-{0}.csv'.format(item)
 		df = scrape(item, location, file_path=file_path)
 
+def read_in_item_data(item, save_path=SAVE_PATH):
+	file_path = 'data/kdat-' + item + '.csv'
+	data_file = open(file_path, 'r')
+	df = pd.read_csv(data_file)
+	data_file.close()
+	return df
 
 if __name__ == '__main__':
 	location = 'city-of-toronto'
-	save_path = 'data/'
-	collect_all(save_path, location, start_item=141)
+	collect_all(location, start_item=141)

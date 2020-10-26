@@ -16,24 +16,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import OneHotEncoder
 
 import categories
-
-def top_words(s, limit=None, word_list=None, sorted=True):
-	if word_list is None:
-		word_counts = cln.defaultdict(int)
-	else:
-		word_counts = dict([(w,0) for w in word_list])
-	for text in s:
-		words = [word.lower() for word in text.split()]
-		for word in words:
-			if word_list is None or word in word_counts:
-				word_counts[word] += 1
-	top = [pair for pair in word_counts.items() if pair[0][0] != '$' and pair[0] != 'free']
-	if limit is None and sorted:
-		top.sort(key=lambda w : w[1])
-	if limit is not None:
-		limit = min(limit, len(word_counts))
-		top = heapq.nlargest(limit, top, key=lambda w : w[1])
-	return top
+import scrape
 
 
 class WordEncoder(base.BaseEstimator, base.TransformerMixin):
@@ -50,8 +33,8 @@ class WordEncoder(base.BaseEstimator, base.TransformerMixin):
 		return self
 
 	def transform(self, X):
-		data = data = X.iloc[:,0].array
-		Xt = []
+		data = X.iloc[:,0].array
+		Xt = list()
 		for text in data:
 			cs = top_words([text], word_list=self.word_list, sorted=False)
 			if self.count:
@@ -75,21 +58,32 @@ class CategoryEst(base.BaseEstimator):
 	    ])
 		self.est = est
 
-	def fit(X,y):
+	def fit(self, X,y):
 		self.est.fit(X,y)
+		return None
 
-	def predict(X):
+	def predict(self, X):
 		return self.est.predict(X)
 
 
-# read csv for a single item to a dataframe
-def read_in_data(item):
-	save_path = 'data/'
-	file_path = save_path + 'kdat-' + item + '.csv'
-	data_file = open(file_path, 'r')
-	df = pd.read_csv(data_file)
-	data_file.close()
-	return df
+def top_words(s, limit=None, word_list=None, sorted=True):
+	if word_list is None:
+		word_counts = cln.defaultdict(int)
+	else:
+		word_counts = dict([(w,0) for w in word_list])
+	for text in s:
+		words = [word.lower() for word in text.split()]
+		for word in words:
+			if word_list is None or word in word_counts:
+				word_counts[word] += 1
+	top = [pair for pair in word_counts.items() if pair[0][0] != '$' and pair[0] != 'free']
+	if limit is None and sorted:
+		top.sort(key=lambda w : w[1])
+	if limit is not None:
+		limit = min(limit, len(word_counts))
+		top = heapq.nlargest(limit, top, key=lambda w : w[1])
+	return top
+
 
 def cross_validate(X,y,est):
 	X_random_order, y_random_order = shuffle(X, y)
@@ -100,6 +94,7 @@ def cross_validate(X,y,est):
             cv=5,  # number of folds
             scoring='neg_root_mean_squared_error')
 	return cv_test_error.mean()
+
 
 def print_nice(coefs,file=sys.stdout):
 	for pair in coefs:
@@ -116,8 +111,8 @@ def prepare_cat_data(cat):
 	price_func = lambda x : math.log(x+25)
 	#price_func = lambda x : math.sqrt(x)
 	dfs = []
-	for item in items:
-		df = read_in_data(item)
+	for (item, _) in items:
+		df = scrape.read_in_item_data(item)
 		df['item'] = item
 		dfs.append(df)
 	data = pd.concat(dfs)
@@ -125,6 +120,28 @@ def prepare_cat_data(cat):
 	X = X.drop(X.columns[0], axis=1)
 	y = data['price'].apply(price_func)
 	return (X,y)
+
+
+def train_model(cat):
+	print('training...')
+	(X,y) = prepare_cat_data(cat)
+	est = CategoryEst(title_lim=400, desc_lim=550)
+	est.fit(X,y)
+	model_path = open('est-' + cat + '.pkd', 'wb')
+	dill.dump(est, model_path)
+	model_path.close()
+	print('done')
+	y_pred = est.predict(X)
+	print(len(X.index))
+	print(metrics.r2_score(y,y_pred))
+	return est
+
+
+def load_model(cat):
+	model_path = open('est-' + cat + '.pkd', 'rb')
+	est = dill.load(model_path)
+	model_path.close()
+	return est
 
 
 # predict the price for a dict with 'title', 'description', 'item'
@@ -140,17 +157,10 @@ def predict_price(Xdict):
 		'retreived':[datetime.now()],
 		'item':[Xdict['item']]
 		})
-	try:
-		model_path = open('est-' + cat + '.pkd', 'r')
-    	est = dill.load(model_path)
-		model_path.close()
-	except FileNotFoundError:
-		(X,y) = prepare_cat_data(cat)
-		est = CategoryEst(title_lim=400, desc_lim=550)
-		est.fit(X,y)
-		model_path = open('est-' + cat + '.pkd', 'wb')
-		dill.dump(est, model_path)
-		model_path.close()
+	#try:
+	est = load_model(cat)
+	#except FileNotFoundError:
+	#	est = train_model(cat)
 	sample_y = est.predict(sample_X)[0]
 	price = math.exp(sample_y)-25
 	return price
@@ -158,10 +168,7 @@ def predict_price(Xdict):
 
 
 if __name__ == '__main__':
-	est = category_est('furniture')
-	y_pred = est.predict(X)
-	print(len(data.index))
-	print(metrics.r2_score(y,y_pred))
+	est = train_model('furniture')
 	'''
 	coefs = pipe.named_steps.est.coef_
 	#print(coefs[:50])
@@ -190,4 +197,3 @@ if __name__ == '__main__':
 	sample_X = {'title':title, 'description':desc, 'item':'bed-mattress'}
 	print(sample_X)
 	print(predict_price(sample_X))
-	'''

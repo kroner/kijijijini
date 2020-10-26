@@ -1,3 +1,4 @@
+import itertools
 
 	#('buy-sell', 10),
 categories = {
@@ -311,8 +312,10 @@ categories = {
 
 	##('garage-sale-yard-sale', 638),
 
-item_list = cat(categories.items())
-categories['buy-sell'] = item_list
+item_list = []
+for li in categories.values():
+	item_list.extend(li)
+#categories['buy-sell'] = item_list
 item_category = dict()
 for cat in categories.keys():
 	for item in categories[cat]:
