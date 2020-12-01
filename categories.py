@@ -229,7 +229,7 @@ categories = {
 	('renovation-other', 737),
 	('renovation-electrical', 729),
 	('heating-cooling-air', 732),
-	('renovation-hardware-nail-screw', 732),
+	('renovation-hardware-nail-screw', 731),
 	('paint-and-painting-supplies', 733),
 	('roofing', 735),
 	],
@@ -244,7 +244,7 @@ categories = {
 	('home-outdoor-other', 726),
 	('patio-garden-furniture', 19),
 	('lawnmower-leaf-blower', 682),
-	('outdoor-decor', 681),
+	('outdoor-decor', 683),
 	('bbq-outdoor-cooking', 678),
 	('outdoor-tools-storage', 685),
 	('outdoor-lighting', 684),
@@ -317,7 +317,7 @@ for li in categories.values():
 	item_list.extend(li)
 #categories['buy-sell'] = item_list
 item_category = dict()
-for cat in categories.keys():
+for cat in categories:
 	for item in categories[cat]:
 		item_category[item[0]] = cat
 

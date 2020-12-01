@@ -1,15 +1,14 @@
 import sys
 import pandas as pd
 import math
-import collections as cln
+from collections import defaultdict
 import heapq
 import dill
 from datetime import datetime
 from sklearn import base
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import SGDRegressor
-from sklearn import compose
-from sklearn import metrics
+from sklearn.metrics import r2_score
 from sklearn.pipeline import FeatureUnion
 from sklearn.pipeline import Pipeline
 from sklearn.utils import shuffle
@@ -20,10 +19,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import HashingVectorizer
-
-
 import categories
-import scrape
+import database
 
 class ModelTransformer(base.BaseEstimator, base.TransformerMixin):
     def __init__(self, est):
@@ -49,7 +46,7 @@ class ColumnSelectTransformer(base.BaseEstimator, base.TransformerMixin):
 
 def top_words(s, limit=None, word_list=None, sorted=True):
 	if word_list is None:
-		word_counts = cln.defaultdict(int)
+		word_counts = defaultdict(int)
 	else:
 		word_counts = dict([(w,0) for w in word_list])
 	for text in s:
@@ -116,69 +113,76 @@ def print_nice(coefs,file=sys.stdout):
 
 # read in all the data for a category and return X and y
 def prepare_cat_data(cat):
-	items = categories.categories[cat]
-	price_func = lambda x : math.log(x+25)
-	#price_func = lambda x : math.sqrt(x)
-	dfs = []
-	for (item, _) in items:
-		df = scrape.read_in_item_data(item)
-		df['item'] = item
-		dfs.append(df)
-	data = pd.concat(dfs)
-	X = data.drop('price', axis=1)
-	X = X.drop(X.columns[0], axis=1)
-	y = data['price'].apply(price_func)
-	return (X,y)
+    items = categories.categories[cat]
+    price_func = lambda x : math.log(x+25)
+    #price_func = lambda x : math.sqrt(x)
+    dfs = []
+    for (item, _) in items:
+        df = database.db_to_df(item)
+        dfs.append(df)
+    data = pd.concat(dfs)
+    if len(data.index) == 0:
+        return (None, None)
+    X = data.drop('price', axis=1)
+    X = X.drop(X.columns[0], axis=1)
+    y = data['price'].apply(price_func)
+    return (X,y)
 
 
 def train_model(cat):
-	title_lim = 400
-	desc_lim = 550
-	print('training... ', end='')
-	(X,y) = prepare_cat_data(cat)
-	'''
-	colt = compose.ColumnTransformer([
-		('item', OneHotEncoder(), ['item']),
-		#('const', 'passthrough', ['const']),
-		('title', WordEncoder(limit=title_lim), ['title']),
-		('description', WordEncoder(limit=desc_lim), ['description'])
-		])
-	est = Pipeline([
+    print(cat, ': training... ', end='', file=sys.stdout)
+    (X,y) = prepare_cat_data(cat)
+    if X is None:
+        return None
+    '''
+    title_lim = 400
+    desc_lim = 550
+    colt = ColumnTransformer([
+        ('item', OneHotEncoder(), ['item']),
+        #('const', 'passthrough', ['const']),
+        ('title', WordEncoder(limit=title_lim), ['title']),
+        ('description', WordEncoder(limit=desc_lim), ['description'])
+        ])
+    est = Pipeline([
         ('transform', colt),
         ('est', LinearRegression())
-    	])
-	'''
-	tfidf_title = Pipeline([
-		('cst', ColumnSelectTransformer()),
-	    ('tfidf', TfidfVectorizer()),
-		])
-	tfidf_desc = Pipeline([
-		('cst', ColumnSelectTransformer()),
-	    ('tfidf', TfidfVectorizer()),
-		])
-	colt = compose.ColumnTransformer([
-		('item', OneHotEncoder(), ['item']),
-		('title', tfidf_title, ['title']),
-		('description', tfidf_desc, ['description'])
-		])
-	est = Pipeline([
-		('trans', colt),
-		('est', SGDRegressor())
-		])
+        ])
+    '''
+    tfidf_title = Pipeline([
+        ('cst', ColumnSelectTransformer()),
+        ('tfidf', TfidfVectorizer()),
+        ])
+    tfidf_desc = Pipeline([
+        ('cst', ColumnSelectTransformer()),
+        ('tfidf', TfidfVectorizer()),
+        ])
+    colt = ColumnTransformer([
+        ('item', OneHotEncoder(), ['item_id']),
+        ('title', tfidf_title, ['title']),
+        ('description', tfidf_desc, ['description'])
+        ])
+    est = Pipeline([
+        ('trans', colt),
+        ('est', SGDRegressor())
+        ])
 
-	est.fit(X,y)
-	model_path = open('est-' + cat + '.pkd', 'wb')
-	dill.dump(est, model_path)
-	model_path.close()
-	print('done')
-	y_pred = est.predict(X)
-	print(len(X.index))
-	print(metrics.r2_score(y,y_pred))
-	return est
+    est.fit(X,y)
+    model_path = open('models/est-' + cat + '.pkd', 'wb')
+    dill.dump(est, model_path)
+    model_path.close()
+    print('done', file=sys.stdout)
+    y_pred = est.predict(X)
+    print(' ', len(X.index), file=sys.stdout)
+    print(' ', r2_score(y,y_pred), file=sys.stdout)
+    return est
 
+def update():
+    for cat in categories.categories:
+        train_model(cat)
+    return None
 
 def load_model(cat):
-	model_path = open('est-' + cat + '.pkd', 'rb')
+	model_path = open('models/est-' + cat + '.pkd', 'rb')
 	est = dill.load(model_path)
 	model_path.close()
 	return est
@@ -190,12 +194,10 @@ def predict_price(Xdict):
 	sample_X = pd.DataFrame({
 		'url':[''],
 		'title':[Xdict['title']],
-		'distance':[''],
 		'description':[Xdict['description']],
 		'location':[''],
-		'time_offset':[datetime.now()],
-		'retreived':[datetime.now()],
-		'item':[Xdict['item']]
+		'post_date':[datetime.now().date()],
+		'item_id':[categories.item_dict[Xdict['item']]]
 		})
 	try:
 		est = load_model(cat)
