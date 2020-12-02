@@ -31,7 +31,7 @@ def extract_text(div):
 
 
 def page_df(response):
-	soup = BeautifulSoup(response.text, "lxml")
+	soup = BeautifulSoup(response.text, 'html.parser')
 	listings_divs = soup.find_all('div', class_='regular-ad')
 	listings_divs = [div for div in listings_divs if len(div['class']) <= 2]
 	info = {'url':[], 'price':[], 'title':[], 'description':[], 'location':[], 'post_date':[], 'retreived':[]}
@@ -130,6 +130,7 @@ def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=101,
 	if len(page_dfs) > 0:
 		df = pd.concat(page_dfs)
 		df['item_id'] = categories.item_dict[item]
+		print(len(df.index), file=sys.stdout)
 		return df
 	return None
 
