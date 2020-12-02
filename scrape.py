@@ -34,7 +34,7 @@ def page_df(response):
 	soup = BeautifulSoup(response.text, "lxml")
 	listings_divs = soup.find_all('div', class_='regular-ad')
 	listings_divs = [div for div in listings_divs if len(div['class']) <= 2]
-	info = {'url' : [], 'price' : [], 'title' : [], 'description' : [], 'location' : [], 'post_date' : []}
+	info = {'url':[], 'price':[], 'title':[], 'description':[], 'location':[], 'post_date':[], 'retreived':[]}
 	index = []
 	for div in listings_divs:
 		loc_time = extract_text(div.find('div', class_='location'))
@@ -57,7 +57,7 @@ def page_df(response):
 		info['description'].append(extract_text(div.find('div', class_='description')))
 		info['location'].append(loc_time[0])
 		info['post_date'].append(post_date(datetime.datetime.now(), loc_time[-1]))
-		#info['retreived'].append(datetime.datetime.now())
+		info['retreived'].append(datetime.datetime.now())
 
 	df = pd.DataFrame(info, index=index)
 	df.index.name = 'id'
@@ -150,7 +150,7 @@ def csv_to_df(item, save_path=SAVE_PATH):
 	df['price'] = df['price'].apply(int)
 	df['retreived'] = df['retreived'].apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f'))
 	df['post_date'] = df.apply(lambda row: post_date(row['retreived'], row['time_offset']), axis=1)
-	return df[['url','price','title','description','location','post_date','item_id']]
+	return df[['url','price','title','description','location','post_date','retreived','item_id']]
 
 
 # find the post date for listing retreived at t and with time string st

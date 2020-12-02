@@ -1,16 +1,17 @@
 import os
-import database
-import commands
 from flask import Flask, render_template, request, redirect
-import model
-import config
-from database import db, Listing, Item, Update
-
 # init flask app instance
 app = Flask(__name__)
 # setup with the configuration provided by the user / environment
-#app.config.from_object(os.environ['APP_SETTINGS'])
-app.config.from_object(config.DevelopmentConfig())
+app.config['CSRF_ENABLED'] = True
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///local_database.db'
+if os.environ['FLASK_ENV'] != 'development':
+	app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+
+import database
+import commands
+import model
 # setup all our dependencies, for now only database using application factory pattern
 database.init_app(app)
 commands.init_app(app)

@@ -118,7 +118,7 @@ def prepare_cat_data(cat):
     #price_func = lambda x : math.sqrt(x)
     dfs = []
     for (item, _) in items:
-        df = database.db_to_df(item)
+        df = database.Listing.to_df(item)
         dfs.append(df)
     data = pd.concat(dfs)
     if len(data.index) == 0:
@@ -128,90 +128,99 @@ def prepare_cat_data(cat):
     y = data['price'].apply(price_func)
     return (X,y)
 
+class CatModel():
+    def __init__(self, cat):
+        self.cat = cat
+        (self.X, self.y) = prepare_cat_data(self.cat)
+        '''
+        title_lim = 400
+        desc_lim = 550
+        colt = ColumnTransformer([
+            ('item', OneHotEncoder(), ['item']),
+            #('const', 'passthrough', ['const']),
+            ('title', WordEncoder(limit=title_lim), ['title']),
+            ('description', WordEncoder(limit=desc_lim), ['description'])
+            ])
+        est = Pipeline([
+            ('transform', colt),
+            ('est', LinearRegression())
+            ])
+        '''
+        tfidf_title = Pipeline([
+            ('cst', ColumnSelectTransformer()),
+            ('tfidf', TfidfVectorizer()),
+            ])
+        tfidf_desc = Pipeline([
+            ('cst', ColumnSelectTransformer()),
+            ('tfidf', TfidfVectorizer()),
+            ])
+        colt = ColumnTransformer([
+            ('item', OneHotEncoder(), ['item_id']),
+            ('title', tfidf_title, ['title']),
+            ('description', tfidf_desc, ['description'])
+            ])
+        self.est = Pipeline([
+            ('trans', colt),
+            ('est', SGDRegressor())
+            ])
 
-def train_model(cat):
-    print(cat, ': training... ', end='', file=sys.stdout)
-    (X,y) = prepare_cat_data(cat)
-    if X is None:
-        return None
-    '''
-    title_lim = 400
-    desc_lim = 550
-    colt = ColumnTransformer([
-        ('item', OneHotEncoder(), ['item']),
-        #('const', 'passthrough', ['const']),
-        ('title', WordEncoder(limit=title_lim), ['title']),
-        ('description', WordEncoder(limit=desc_lim), ['description'])
-        ])
-    est = Pipeline([
-        ('transform', colt),
-        ('est', LinearRegression())
-        ])
-    '''
-    tfidf_title = Pipeline([
-        ('cst', ColumnSelectTransformer()),
-        ('tfidf', TfidfVectorizer()),
-        ])
-    tfidf_desc = Pipeline([
-        ('cst', ColumnSelectTransformer()),
-        ('tfidf', TfidfVectorizer()),
-        ])
-    colt = ColumnTransformer([
-        ('item', OneHotEncoder(), ['item_id']),
-        ('title', tfidf_title, ['title']),
-        ('description', tfidf_desc, ['description'])
-        ])
-    est = Pipeline([
-        ('trans', colt),
-        ('est', SGDRegressor())
-        ])
+    def load(self):
+        try:
+            model_path = open('models/est-' + self.cat + '.pkd', 'rb')
+            self.est = dill.load(model_path)
+            model_path.close()
+        except FileNotFoundError:
+            self.fit()
 
-    est.fit(X,y)
-    model_path = open('models/est-' + cat + '.pkd', 'wb')
-    dill.dump(est, model_path)
-    model_path.close()
-    print('done', file=sys.stdout)
-    y_pred = est.predict(X)
-    print(' ', len(X.index), file=sys.stdout)
-    print(' ', r2_score(y,y_pred), file=sys.stdout)
-    return est
+    def fit(self):
+        print(self.cat, ': training... ', end='', file=sys.stdout)
+        if self.X is None:
+            print('no data', file=sys.stdout)
+            return None
+        self.est.fit(self.X, self.y)
+        model_path = open('models/est-' + self.cat + '.pkd', 'wb')
+        dill.dump(self.est, model_path)
+        model_path.close()
+        print('done', file=sys.stdout)
+        print(' ', len(self.X.index), file=sys.stdout)
 
-def update():
+    def r2_score(self):
+        y_pred = self.est.predict(self.X)
+        return r2_score(self.y, y_pred)
+
+    def predict(self, X):
+        return self.est.predict(X)
+
+
+
+def train_all():
     for cat in categories.categories:
-        train_model(cat)
+        est = CatModel(cat)
+        est.fit()
+        if est.X is not None:
+            print(est.r2_score())
     return None
-
-def load_model(cat):
-	model_path = open('models/est-' + cat + '.pkd', 'rb')
-	est = dill.load(model_path)
-	model_path.close()
-	return est
 
 
 # predict the price for a dict with 'title', 'description', 'item'
 def predict_price(Xdict):
-	cat = categories.item_category[Xdict['item']]
-	sample_X = pd.DataFrame({
-		'url':[''],
-		'title':[Xdict['title']],
-		'description':[Xdict['description']],
-		'location':[''],
-		'post_date':[datetime.now().date()],
-		'item_id':[categories.item_dict[Xdict['item']]]
-		})
-	try:
-		est = load_model(cat)
-	except FileNotFoundError:
-		est = train_model(cat)
-	sample_y = est.predict(sample_X)[0]
-	price = math.exp(sample_y)-25
-	return price
+    cat = categories.item_category[Xdict['item']]
+    sample_X = pd.DataFrame({
+        'url' : [''],
+        'title' : [Xdict['title']],
+        'description' : [Xdict['description']],
+        'location' : [''],
+        'post_date' : [datetime.now().date()],
+        'item_id' : [categories.item_dict[Xdict['item']]]
+        })
+    est = CatModel(cat)
+    est.load()
+    sample_y = est.predict(sample_X)[0]
+    price = math.exp(sample_y)-25
+    return price
 
-
-
-if __name__ == '__main__':
-	train_model('furniture')
-	'''
+'''
+def some_stupid_test_stuff(est):
 	coefs = pipe.named_steps.est.coef_
 	#print(coefs[:50])
 	col_trans = pipe.named_steps.transform.named_transformers_
@@ -233,9 +242,13 @@ if __name__ == '__main__':
 	#print_nice(title_coefs[:50])
 	#print(cross_validate(X,y,pipe))
 	print(X)
-	'''
-	title = '18" tall metal bed frame'
-	desc = 'Selling an 18" tall metal bed frame. Comes apart at corners for easy assembly. Great for condo as the height is perfect for under bed storage bins or luggate. Frame is in near perfect condition.  Comes with wooden slats.'
-	sample_X = {'title':title, 'description':desc, 'item':'bed-mattress'}
-	print(sample_X)
-	print(predict_price(sample_X))
+'''
+
+if __name__ == '__main__':
+    est = CatModel('furniture')
+    est.train()
+    title = '18" tall metal bed frame'
+    desc = 'Selling an 18" tall metal bed frame. Comes apart at corners for easy assembly. Great for condo as the height is perfect for under bed storage bins or luggate. Frame is in near perfect condition.  Comes with wooden slats.'
+    sample_X = {'title':title, 'description':desc, 'item':'bed-mattress'}
+    print(sample_X)
+    print(predict_price(sample_X))
