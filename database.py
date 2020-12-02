@@ -71,10 +71,11 @@ class Item(db.Model):
         self.category = categories.item_category[item]
 
     def get(item):
-        i = Item(item)
-        db.session.merge(i)
-        db.session.commit()
-        return i
+        if Item.query.filter(Item.name == item).count() != 1:
+            i = Item(item)
+            db.session.add(i)
+            db.session.commit()
+        return Item.query.filter(Item.name == item).one()
 
     def __repr__(self):
         return f'Item: {self.id}, {self.name}'
