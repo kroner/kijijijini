@@ -27,6 +27,7 @@ def drop(table):
 # Add listings from csv files to the database
 def read_csvs():
     for item in categories.item_dict:
+        Item.get(item)
     #for item in ['art-collectables']:
         try:
             df = sc.csv_to_df(item)

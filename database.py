@@ -29,9 +29,7 @@ class Listing(db.Model):
         if items is None:
             items = categories.item_dict.keys()
         for item in items:
-            i = Item(item)
-            db.session.merge(i)
-            db.session.commit()
+            i = Item.get(item)
             start_date = i.update_time
             if start_date is not None:
                 start_date = start_date.date()
@@ -71,6 +69,12 @@ class Item(db.Model):
         self.id = categories.item_dict[item]
         self.name = item
         self.category = categories.item_category[item]
+
+    def get(item):
+        i = Item(item)
+        db.session.merge(i)
+        db.session.commit()
+        return i
 
     def __repr__(self):
         return f'Item: {self.id}, {self.name}'
