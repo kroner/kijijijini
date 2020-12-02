@@ -29,9 +29,9 @@ class Listing(db.Model):
         if items is None:
             items = categories.item_dict.keys()
         for item in items:
-            try:
+            if Item.query.filter(Item.name == item).count() == 1:
                 i = Item.query.filter(Item.name == item).one()
-            except NoResultFound:
+            else:
                 i = Item(item)
                 db.session.add(i)
                 db.session.commit()
