@@ -15,3 +15,4 @@ jinja2
 pip
 simplejson
 flask_sqlalchemy
+bs4

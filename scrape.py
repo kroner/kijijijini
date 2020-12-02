@@ -9,7 +9,7 @@ import time
 import categories
 import datetime
 from bs4 import BeautifulSoup
-from concurrent.futures import as_completed
+#from concurrent.futures import as_completed
 #from requests_futures.sessions import FuturesSession
 
 url = 'https://www.kijiji.ca/b-{0}/{1}/page-{2}/c{3}l{4}'
