@@ -17,3 +17,4 @@ simplejson
 flask_sqlalchemy
 bs4
 psycopg2
+lxml

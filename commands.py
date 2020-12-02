@@ -34,6 +34,7 @@ def read_csvs():
             Listing.from_df(df)
         except FileNotFoundError:
             pass
+        print(item, file=sys.stdout)
 
 # Scrape new listings from kijiji and add them to the database
 @click.argument("x")
