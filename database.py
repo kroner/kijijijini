@@ -29,12 +29,9 @@ class Listing(db.Model):
         if items is None:
             items = categories.item_dict.keys()
         for item in items:
-            if Item.query.filter(Item.name == item).count() == 1:
-                i = Item.query.filter(Item.name == item).one()
-            else:
-                i = Item(item)
-                db.session.add(i)
-                db.session.commit()
+            i = Item(item)
+            db.session.merge(i)
+            db.session.commit()
             start_date = i.update_time
             if start_date is not None:
                 start_date = start_date.date()
