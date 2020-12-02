@@ -1,1 +1,1 @@
-web: gunicorn kijijijini:app
+web: gunicorn app:app
