@@ -6,7 +6,7 @@ app = Flask(__name__)
 app.config['CSRF_ENABLED'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///local_database.db'
-if os.environ['FLASK_ENV'] != 'development':
+if os.environ.get('FLASK_ENV') != 'development':
 	app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 
 import database
