@@ -211,6 +211,7 @@ def predict_price(Xdict):
         'description' : [Xdict['description']],
         'location' : [''],
         'post_date' : [datetime.now().date()],
+        'retreived' : [datetime.now()],
         'item_id' : [categories.item_dict[Xdict['item']]]
         })
     est = CatModel(cat)
