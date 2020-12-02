@@ -69,8 +69,10 @@ def page_df(response):
 def try_page(page_url, get_count=False):
 	for _ in range(TRIES):
 		response_code = 0
-		try: response = requests.get(page_url)
-		except (TypeError, AttributeError, ConnectionError):
+		try:
+			response = requests.get(page_url)
+		#except (TypeError, AttributeError, ConnectionError):
+		except:
 			print('!', end='', flush=True, file=sys.stdout)
 			continue
 		response_code = response.status_code
