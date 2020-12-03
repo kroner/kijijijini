@@ -1,63 +1,152 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="Skeleton application demoing Heroku and Flask integration.">
-    <meta name="author" content="@gotoariel">
-    <!-- <link rel="icon" href="favicon.ico"> -->
 
-    <title>kijijijini - appraise your item!</title>
+<head>
 
-    <!-- Bootstrap core CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-  </head>
-  <body>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Robert Krone's Capstone for TDI Fall 2020">
+  <meta name="author" content="">
+
+  <title>kijijijini - appraise your stuff!</title>
+
+  <!-- Bootstrap core CSS -->
+  <link href="{{ url_for('static',filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+  <!-- Custom styles for this template -->
+  <link href="{{ url_for('static',filename='css/scrolling-nav.css') }}" rel="stylesheet">
+
+</head>
+
+<body id="page-top">
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
+    <div class="container">
+      <a class="navbar-brand js-scroll-trigger" href="#page-top">kijijijini</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarResponsive">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link js-scroll-trigger" href="#about">about</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link js-scroll-trigger" href="https://github.com/kroner/kijijijini">github</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link js-scroll-trigger" href="https://www.kijiji.ca/b-buy-sell/city-of-toronto/c10l1700273">kijiji</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <header class="bg-primary text-white">
+    <div class="container text-center">
+      <h1>kijijijini</h1>
+      <p class="lead">appraise your stuff!</p>
+    </div>
+  </header>
+
+  <section id="urlInput" class="bg-light">
     <div class="container">
       <div class="row">
-        <div class="col-lg-12 text-left">
-          <br>
-          <form action="/" id="listing" method="post">
-            <ul>
-            <li><label>Item Type:</label>
-             <select id="item">
-               <option value = "indoor-decor-accent">indoor-decor-accent</option>
-               <option value = "kitchen-dining">kitchen-dining</option>
-               <option value = "indoor-lighting-fan">indoor-lighting-fan</option>
-               <option value = "rug-carpet-runner">rug-carpet-runner</option>
-               <option value = "home-indoor-other">home-indoor-other</option>
-               <option value = "storage-organization">storage-organization</option>
-               <option value = "bathware-bathroom">bathware-bathroom</option>
-               <option value = "bedding">bedding</option>
-               <option value = "window-treatment">window-treatment</option>
-               <option value = "holiday-event-seasonal">holiday-event-seasonal</option>
-               <option value = "fireplace-firewood">fireplace-firewood</option>
-             </select></li>
-            <li><label for="fname">Title:</label>
-            <input type="text" id="title" name="title"></li>
-            <li><label for="fname">Description:</label>
-            <textarea name="description" form="listing"></textarea></li>
-            <input type="submit" value="Submit">
-            </ul>
+        <div class="col-lg-8 mx-auto">
+          <h4>Listing url:</h4>
+          <form action="/" id="url" method="post">
+            <div class="form-group">
+              <input type="text" class="form-control" id="titleBox" placeholder="">
+            </div>
+            <input class="btn btn-primary" type="submit" value="Submit">
           </form>
-          <br>
-          Suggested price: {{ price }}
-          <!--
-          <ul>
-            <li><a href="/about">About</a></li>
-            <li><a target="_blank" href="https://www.heroku.com/">Heroku</a></li>
-            <li><a target="_blank" href="http://flask.pocoo.org/">Flask</a></li>
-            <li><a target="_blank" href="http://jinja.pocoo.org/docs/2.9/">Jinja2</a></li>
-            <li><a target="_blank" href="http://getbootstrap.com/">Bootstrap</a></li>
-          </ul>
-        -->
         </div>
       </div>
     </div>
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-  </body>
+  </section>
+
+  <section id="listingInput">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 mx-auto">
+          <h4>Your listing:</h4>
+          <form action="/" id="listing" method="post">
+            <div class="form-group">
+              <select class="form-control" name="item" id="item" required>
+                <option value = "" selected>Item type</option>
+                <option value = "chair-recliner">chair-recliner</option>
+                <option value = "bed-mattress">bed-mattress</option>
+                <option value = "couch-futon">couch-futon</option>
+                <option value = "dining-table-set">dining-table-set</option>
+                <option value = "coffee-table-ottoman">coffee-table-ottoman</option>
+                <option value = "hutch-display-cabinet">hutch-display-cabinet</option>
+                <option value = "dresser-wardrobe">dresser-wardrobe</option>
+                <option value = "furniture-other-table">furniture-other-table</option>
+                <option value = "bookcase-shelves">bookcase-shelves</option>
+                <option value = "other-furniture">other-furniture</option>
+                <option value = "buy-sell-desks">buy-sell-desks</option>
+                <option value = "tv-table-entertainment-unit">tv-table-entertainment-unit</option>
+                <!--
+                <option value = "indoor-decor-accent">indoor-decor-accent</option>
+                <option value = "kitchen-dining">kitchen-dining</option>
+                <option value = "indoor-lighting-fan">indoor-lighting-fan</option>
+                <option value = "rug-carpet-runner">rug-carpet-runner</option>
+                <option value = "home-indoor-other">home-indoor-other</option>
+                <option value = "storage-organization">storage-organization</option>
+                <option value = "bathware-bathroom">bathware-bathroom</option>
+                <option value = "bedding">bedding</option>
+                <option value = "window-treatment">window-treatment</option>
+                <option value = "holiday-event-seasonal">holiday-event-seasonal</option>
+                <option value = "fireplace-firewood">fireplace-firewood</option>
+                -->
+              </select>
+            </div>
+
+            <div class="form-group">
+              <input type="text" class="form-control" name="title" id="title" placeholder="Title">
+            </div>
+
+            <div class="form-group">
+              <textarea class="form-control" name="description" id="description" rows="3" placeholder="Description"></textarea>
+            </div>
+            <input class="btn btn-primary" type="submit" value="Submit">
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about" class="bg-light">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 mx-auto">
+          <h3>About</h3>
+          <p class="lead">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut optio velit inventore, expedita quo laboriosam possimus ea consequatur vitae, doloribus consequuntur ex. Nemo assumenda laborum vel, labore ut velit dignissimos.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-5 bg-dark">
+    <div class="container">
+      <p class="m-0 text-center text-white">Copyright &copy; Your Website 2020</p>
+    </div>
+    <!-- /.container -->
+  </footer>
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Plugin JavaScript -->
+  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+  <!-- Custom JavaScript for this theme -->
+  <script src="js/scrolling-nav.js"></script>
+
+</body>
+
 </html>

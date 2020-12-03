@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 
 url = 'https://www.kijiji.ca/b-{0}/{1}/page-{2}/c{3}l{4}'
 SLEEP_TIME = 60 # seconds to wait if no results are returned
-FAIL_CAP   =  1 # max number of failures before ending
+FAIL_CAP   = 10 # max number of failures before ending
 TRIES      =  5 # number of times to try the same query before failing
 SAVE_PATH  = '/home/robert/Dropbox/TDI/kijijijini/data/'
 LOCATION   = 'city-of-toronto'
@@ -66,7 +66,7 @@ def page_df(response):
 	return df
 
 
-def try_page(page_url, get_count=False):
+def try_page(page_url, page, get_count=False):
 	for _ in range(TRIES):
 		response_code = 0
 		try:
@@ -99,7 +99,7 @@ def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=101,
 	if file_path is not None:
 		out_file = open(file_path, 'w')
 	page_url = url.format(item, location, 1, categories.item_code(item), location_codes[location])
-	listings = try_page(page_url, get_count=True)
+	listings = try_page(page_url, 1, get_count=True)
 	end_page = min([(listings-1)//40 + 2, end_page])
 
 	print(item, listings, flush=True, file=sys.stdout)
@@ -110,7 +110,7 @@ def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=101,
 		if page % 10 == 9: print('.', end='', flush=True)
 		fail = True
 		page_url = url.format(item, location, page, categories.item_code(item), location_codes[location])
-		df = try_page(page_url)
+		df = try_page(page_url, page)
 		if df is None:
 			fail_count += 1
 			if fail_count >= FAIL_CAP:

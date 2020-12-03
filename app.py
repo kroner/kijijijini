@@ -1,4 +1,5 @@
 import os
+import sys
 from flask import Flask, render_template, request, redirect
 # init flask app instance
 app = Flask(__name__)
@@ -7,6 +8,7 @@ app.config['CSRF_ENABLED'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///local_database.db'
 if os.environ.get('FLASK_ENV') != 'development':
+	print('hi', file=sys.stdout)
 	app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 
 import database
