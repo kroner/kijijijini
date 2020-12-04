@@ -27,8 +27,8 @@ def drop(table):
 # Add listings from csv files to the database
 def read_csvs():
     for item in categories.items():
+    #for item in [categoties.by_name('art-collectibles')]:
         Item.get(item)
-    #for item in ['art-collectables']:
         try:
             df = sc.csv_to_df(item)
             Listing.from_df(df)
@@ -47,7 +47,8 @@ def update(cat):
         n0 = Listing.query.filter(Listing.item_id == item.id).count()
         Listing.update(item)
         n1 = Listing.query.filter(Listing.item_id == item.id).count()
-        print('New listings:', n1 - n0, file=sys.stdout)
+        print('New listings:', n1 - n0, '({0})'.format(n1), file=sys.stdout)
+        print(Listing.query.count(), file=sys.stdout)
 
 # Retrain the models
 @click.argument("cat")
@@ -59,8 +60,12 @@ def train(cat):
     for cat in cats:
         model.train(cat)
 
+def fix():
+    Listing.query.filter(Listing.item_id == 12).delete()
+    Item.query.filter(Item.id == 12).delete()
+    db.session.commit()
 
 def init_app(app):
-    commands = [create, drop, update, train]
+    commands = [create, drop, update, train, fix]
     for command in commands:
         app.cli.add_command(app.cli.command()(command))

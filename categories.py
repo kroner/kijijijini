@@ -2,6 +2,8 @@
 
 ids = dict()
 names = dict()
+# A class for item types and categories
+# Disabled items are still scraped into the database but not used in models
 class Category():
 	def __init__(self, name, id, string, parent=None, disable=False):
 		self.name = name
@@ -25,16 +27,20 @@ class Category():
 			return self
 		return self.parent
 
+# Retreive item by its id
 def by_id(id):
 	print(ids.keys())
 	return ids[id]
 
+# Retreive item by its name
 def by_name(name):
 	return names[name]
 
+# List all non-disabled cateogries
 def categories():
 	return buy_sell.active_children()
 
+# List all non-disabled items
 def items():
 	items = []
 	for cat in categories():
