@@ -57,6 +57,7 @@ def train(cat):
         model.train(cat)
 
 def fix():
+    Listing.query.filter(Listing.item_id == 12).delete()
     Item.query.filter(Item.id == 12).delete()
 
 def init_app(app):
