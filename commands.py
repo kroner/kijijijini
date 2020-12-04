@@ -44,7 +44,10 @@ def update(cat):
     else:
         items = categories.by_name(cat).active_children()
     for item in items:
+        n0 = Listing.query.filter(Listing.item_id == item.id).count()
         Listing.update(item)
+        n1 = Listing.query.filter(Listing.item_id == item.id).count()
+        print('New listings:', n1 - n0, file=sys.stdout)
 
 # Retrain the models
 @click.argument("cat")
@@ -56,11 +59,8 @@ def train(cat):
     for cat in cats:
         model.train(cat)
 
-def fix():
-    Listing.query.filter(Listing.item_id == 12).delete()
-    Item.query.filter(Item.id == 12).delete()
 
 def init_app(app):
-    commands = [create, drop, read_csvs, update, train, fix]
+    commands = [create, drop, update, train]
     for command in commands:
         app.cli.add_command(app.cli.command()(command))

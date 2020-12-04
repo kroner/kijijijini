@@ -1,55 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
-
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="Robert Krone's Capstone for TDI Fall 2020">
-  <meta name="author" content="">
-  <link rel="icon" type="image/png" href="{{ url_for('static',filename='favicon.png') }}">
-
-  <title>kijijijini - appraise your stuff!</title>
-
-  <!-- Bootstrap core CSS -->
-  <link href="{{ url_for('static',filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-
-  <!-- Custom styles for this template -->
-  <link href="{{ url_for('static',filename='css/scrolling-nav.css') }}" rel="stylesheet">
-
-</head>
-
-<body id="page-top">
-
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
-    <div class="container">
-      <a class="navbar-brand js-scroll-trigger" href="#page-top">kijijijini</a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarResponsive">
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item">
-            <a class="nav-link js-scroll-trigger" href="/about.html">about</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link js-scroll-trigger" href="https://github.com/kroner/kijijijini">github</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link js-scroll-trigger" href="https://www.kijiji.ca/b-buy-sell/city-of-toronto/c10l1700273">kijiji</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
-
-  <header class="bg-info text-white">
-    <div class="container text-center">
-      <h1>kijijijini</h1>
-      <p class="lead">appraise your stuff!</p>
-    </div>
-  </header>
+{% block content %}
 
   <section id="urlInput" class="bg-light">
     <div class="container">
@@ -61,7 +12,7 @@
               <input type="text" name="url" class="form-control" id="titleBox" placeholder="">
             </div>
             <input type="hidden" name="form" value="url">
-            <input class="btn btn-primary" type="submit" value="Submit">
+            <input class="btn btn-info" type="submit" value="Submit">
           </form>
         </div>
       </div>
@@ -110,10 +61,10 @@
             </div>
 
             <div class="form-group">
-              <textarea class="form-control" name="description" id="description" rows="3" placeholder="Description">{{ description | safe }}</textarea>
+              <textarea class="form-control" name="description" id="description" rows="4" placeholder="Description">{{ description | safe }}</textarea>
             </div>
             <input type="hidden" name="form" value="listing">
-            <input class="btn btn-primary" type="submit" value="Submit">
+            <input class="btn btn-info" type="submit" value="Submit">
           </form>
 
         </div>
@@ -134,24 +85,4 @@
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="py-5 bg-dark">
-    <div class="container">
-      <p class="m-0 text-center text-white">Copyright &copy; Your Website 2020</p>
-    </div>
-    <!-- /.container -->
-  </footer>
-
-  <!-- Bootstrap core JavaScript -->
-  <script src="{{ url_for('static',filename='vendor/jquery/jquery.min.js') }}"></script>
-  <script src="{{ url_for('static',filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-
-  <!-- Plugin JavaScript -->
-  <script src="{{ url_for('static',filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
-
-  <!-- Custom JavaScript for this theme -->
-  <script src="{{ url_for('static',filename='js/scrolling-nav.js') }}"></script>
-
-</body>
-
-</html>
+{% endblock %}

@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 url = 'https://www.kijiji.ca/b-{0}/{1}/page-{2}/c{3}l{4}'
 url2 = 'https://www.kijiji.ca/v-/a/a/{0}'
 SLEEP_TIME = 60 # seconds to wait if no results are returned
-FAIL_CAP   = 10 # max number of failures before ending
+FAIL_CAP   =  5 # max number of failures before ending
 TRIES      =  5 # number of times to try the same query before failing
 SAVE_PATH  = '/home/robert/Dropbox/TDI/kijijijini/data/'
 LOCATION   = 'city-of-toronto'
@@ -33,6 +33,8 @@ def extract_text(div):
 def page_df(response):
 	soup = BeautifulSoup(response.text, 'html.parser')
 	listings_divs = soup.find_all('div', class_='regular-ad')
+	if len(listings_divs) == 0:
+		raise LookupError
 	listings_divs = [div for div in listings_divs if len(div['class']) <= 2]
 	info = {'url':[], 'price':[], 'title':[], 'description':[], 'location':[], 'post_date':[], 'retreived':[]}
 	index = []
@@ -70,7 +72,7 @@ def listing_info(response):
 	soup = BeautifulSoup(response.text, 'html.parser')
 	title_obj = soup.find('h1', itemprop='name')
 	if title_obj is None:
-		return None
+		raise LookupError
 	info['title'] = extract_text(title_obj)
 	dobj = soup.find('div', itemprop='description')
 	desc = ' '.join([extract_text(p) for p in dobj('p')])
@@ -114,21 +116,21 @@ def try_page(page_url, page=None, get_count=False):
 			if div is None:
 				continue
 			return int(div.text.split()[-2].replace(',',''))
-		if page is not None:
-			out = page_df(response)
-		else:
-			out = listing_info(response)
-		if out is None:
+		try:
+			if page is not None:
+				out = page_df(response)
+			else:
+				out = listing_info(response)
+			return out
+		except LookupError:
 			print('z', end='', flush=True, file=sys.stdout)
 			time.sleep(SLEEP_TIME)
 			continue
-		else:
-			return out
 	if page is not None:
 		print('\npage {0} response code {1}.'.format(page,response_code), flush=True, file=sys.stderr)
 	else:
 		print('\nresponse code {0}.'.format(response_code), flush=True, file=sys.stderr)
-	return None
+	raise LookupError
 
 
 def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=101, file_path=None):
@@ -138,8 +140,8 @@ def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=101,
 	listings = try_page(page_url, 1, get_count=True)
 	end_page = min([(listings-1)//40 + 2, end_page])
 
-	print(item.name, item.id, listings, flush=True, file=sys.stdout)
-	print(page_url)
+	print('{0} ({1})'.format(item.name, item.id), flush=True, file=sys.stdout)
+	print('Current listings:', listings, flush=True, file=sys.stdout)
 
 	page_dfs = []
 	fail_count = 0
@@ -147,19 +149,20 @@ def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=101,
 		if page % 10 == 9: print('.', end='', flush=True)
 		fail = True
 		page_url = url.format(item.name, location, page, item.id, location_codes[location])
-		df = try_page(page_url, page)
-		if df is None:
+		try:
+			df = try_page(page_url, page)
+			if df is not None:
+				if file_path is not None:
+					df.to_csv(out_file, header=(page == 0))
+				#df.to_sql(name='listings', con=db.engine)
+				#db.session.commit()
+				page_dfs.append(df)
+				if start_date is not None and df['post_date'].iloc[-1] < start_date:
+					break
+		except LookupError:
 			fail_count += 1
 			if fail_count >= FAIL_CAP:
 				print('stopped at page {0}.'.format(page), flush=True, file=sys.stderr)
-				break
-		else:
-			if file_path is not None:
-				df.to_csv(out_file, header=(page == 0))
-			#df.to_sql(name='listings', con=db.engine)
-			#db.session.commit()
-			page_dfs.append(df)
-			if start_date is not None and df['post_date'].iloc[-1] < start_date:
 				break
 	if file_path is not None:
 		out_file.close()
@@ -167,7 +170,6 @@ def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=101,
 	if len(page_dfs) > 0:
 		df = pd.concat(page_dfs)
 		df['item_id'] = item.id
-		print(len(df.index), file=sys.stdout)
 		return df
 	return None
 
