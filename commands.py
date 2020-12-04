@@ -57,7 +57,7 @@ def train(cat):
         model.train(cat)
 
 def fix():
-    Item.query.filter_by(Item.id==12).delete()
+    Item.query.filter_by(Item.id == 12).delete()
 
 def init_app(app):
     commands = [create, drop, read_csvs, update, train, fix]
