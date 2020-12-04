@@ -8,29 +8,32 @@ app.config['CSRF_ENABLED'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///local_database.db'
 if os.environ.get('FLASK_ENV') != 'development':
-	print('hi', file=sys.stdout)
 	app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 
 import database
 import commands
 import model
+import scrape
 # setup all our dependencies, for now only database using application factory pattern
 database.init_app(app)
 commands.init_app(app)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+	X = dict()
 	if request.method == 'POST':
-		sample_X = {
-			'title':request.form['title'],
-			'description':request.form['description'],
-			'item':'bed-mattress'
-			}
-		price = model.predict_price(sample_X)
-		price_str = '$' + '{:.0f}'.format(price)
+		if request.form['form'] == 'listing':
+			X['item'] = request.form['item']
+			X['title'] = request.form['title']
+			X['description'] = scrape.standardize_desc(request.form['description'], 200)
+		else:
+			page_url = scrape.search_url(request.form['url'])
+			X = scrape.try_page(page_url, page=None)
+		price = model.predict_price(X)
+		X['price'] = '$' + '{:.0f}'.format(price)
 	else:
-		price_str = ''
-	return render_template('index.html',price=price_str)
+		X = {'price' : ''}
+	return render_template('index.html', **X)
 
 @app.route('/about')
 def about():

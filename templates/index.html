@@ -7,6 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="description" content="Robert Krone's Capstone for TDI Fall 2020">
   <meta name="author" content="">
+  <link rel="icon" type="image/png" href="{{ url_for('static',filename='favicon.png') }}">
 
   <title>kijijijini - appraise your stuff!</title>
 
@@ -30,7 +31,7 @@
       <div class="collapse navbar-collapse" id="navbarResponsive">
         <ul class="navbar-nav ml-auto">
           <li class="nav-item">
-            <a class="nav-link js-scroll-trigger" href="#about">about</a>
+            <a class="nav-link js-scroll-trigger" href="/about.html">about</a>
           </li>
           <li class="nav-item">
             <a class="nav-link js-scroll-trigger" href="https://github.com/kroner/kijijijini">github</a>
@@ -43,7 +44,7 @@
     </div>
   </nav>
 
-  <header class="bg-primary text-white">
+  <header class="bg-info text-white">
     <div class="container text-center">
       <h1>kijijijini</h1>
       <p class="lead">appraise your stuff!</p>
@@ -54,11 +55,12 @@
     <div class="container">
       <div class="row">
         <div class="col-lg-8 mx-auto">
-          <h4>Listing url:</h4>
+          <h4>listing url or id:</h4>
           <form action="/" id="url" method="post">
             <div class="form-group">
-              <input type="text" class="form-control" id="titleBox" placeholder="">
+              <input type="text" name="url" class="form-control" id="titleBox" placeholder="">
             </div>
+            <input type="hidden" name="form" value="url">
             <input class="btn btn-primary" type="submit" value="Submit">
           </form>
         </div>
@@ -70,7 +72,7 @@
     <div class="container">
       <div class="row">
         <div class="col-lg-8 mx-auto">
-          <h4>Your listing:</h4>
+          <h4>your listing:</h4>
           <form action="/" id="listing" method="post">
             <div class="form-group">
               <select class="form-control" name="item" id="item" required>
@@ -104,12 +106,13 @@
             </div>
 
             <div class="form-group">
-              <input type="text" class="form-control" name="title" id="title" placeholder="Title">
+              <input type="text" class="form-control" name="title" id="title" placeholder="Title" value="{{ title | safe }}">
             </div>
 
             <div class="form-group">
-              <textarea class="form-control" name="description" id="description" rows="3" placeholder="Description"></textarea>
+              <textarea class="form-control" name="description" id="description" rows="3" placeholder="Description">{{ description | safe }}</textarea>
             </div>
+            <input type="hidden" name="form" value="listing">
             <input class="btn btn-primary" type="submit" value="Submit">
           </form>
 
@@ -118,12 +121,14 @@
     </div>
   </section>
 
-  <section id="about" class="bg-light">
+  <section id="price" class="bg-light">
     <div class="container">
       <div class="row">
         <div class="col-lg-8 mx-auto">
-          <h3>About</h3>
-          <p class="lead">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut optio velit inventore, expedita quo laboriosam possimus ea consequatur vitae, doloribus consequuntur ex. Nemo assumenda laborum vel, labore ut velit dignissimos.</p>
+          <h4>price suggestion:</h4>
+          <h4 class="text-success">&nbsp;&nbsp; {{ price }}</h4>
+          <br>
+          <br>
         </div>
       </div>
     </div>
@@ -138,14 +143,14 @@
   </footer>
 
   <!-- Bootstrap core JavaScript -->
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static',filename='vendor/jquery/jquery.min.js') }}"></script>
+  <script src="{{ url_for('static',filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 
   <!-- Plugin JavaScript -->
-  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+  <script src="{{ url_for('static',filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
 
   <!-- Custom JavaScript for this theme -->
-  <script src="js/scrolling-nav.js"></script>
+  <script src="{{ url_for('static',filename='js/scrolling-nav.js') }}"></script>
 
 </body>
 

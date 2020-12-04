@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm.exc import NoResultFound
 import pandas as pd
 import categories
+from categories import Category
 import sys
 import scrape as sc
 
@@ -25,18 +26,15 @@ class Listing(db.Model):
 
     # Retreive new listings from kijiji and put in the database
     # If items is None, get all new listings, else only for the items in the list.
-    def update(items=None):
-        if items is None:
-            items = categories.item_dict.keys()
-        for item in items:
-            i = Item.get(item)
-            start_date = i.update_time
-            if start_date is not None:
-                start_date = start_date.date()
-            df = sc.scrape(item, start_date=start_date)
-            Listing.from_df(df)
-            i.update_time = db.func.current_timestamp()
-            db.session.commit()
+    def update(item):
+        i = Item.get(item)
+        start_date = i.update_time
+        if start_date is not None:
+            start_date = start_date.date()
+        df = sc.scrape(item, start_date=start_date)
+        Listing.from_df(df)
+        i.update_time = db.func.current_timestamp()
+        db.session.commit()
 
     # Add contents of a database into the listings table
     def from_df(df):
@@ -49,8 +47,7 @@ class Listing(db.Model):
 
     # Create dataframe for item listings in table
     def to_df(item):
-        item_id = categories.item_dict[item]
-        q = Listing.query.filter(Listing.item_id == item_id)
+        q = Listing.query.filter(Listing.item_id == item.id)
         df = pd.read_sql(q.statement, db.session.bind)
         return df
 
@@ -66,16 +63,16 @@ class Item(db.Model):
     update_time = db.Column(db.DateTime)
 
     def __init__(self, item):
-        self.id = categories.item_dict[item]
-        self.name = item
-        self.category = categories.item_category[item]
+        self.id = item.id
+        self.name = item.name
+        self.category = item.category().name
 
     def get(item):
-        if Item.query.filter(Item.name == item).count() != 1:
+        if Item.query.filter(Item.id == item.id).count() != 1:
             i = Item(item)
             db.session.add(i)
             db.session.commit()
-        return Item.query.filter(Item.name == item).one()
+        return Item.query.filter(Item.id == item.id).one()
 
     def __repr__(self):
         return f'Item: {self.id}, {self.name}'

@@ -6,13 +6,13 @@ import sys
 import numpy as np
 import pandas as pd
 import time
-import categories
 import datetime
 from bs4 import BeautifulSoup
 #from concurrent.futures import as_completed
 #from requests_futures.sessions import FuturesSession
 
 url = 'https://www.kijiji.ca/b-{0}/{1}/page-{2}/c{3}l{4}'
+url2 = 'https://www.kijiji.ca/v-/a/a/{0}'
 SLEEP_TIME = 60 # seconds to wait if no results are returned
 FAIL_CAP   = 10 # max number of failures before ending
 TRIES      =  5 # number of times to try the same query before failing
@@ -65,8 +65,38 @@ def page_df(response):
 		df = None
 	return df
 
+def listing_info(response):
+	info = dict()
+	soup = BeautifulSoup(response.text, 'html.parser')
+	title_obj = soup.find('h1', itemprop='name')
+	if title_obj is None:
+		return None
+	info['title'] = extract_text(title_obj)
+	dobj = soup.find('div', itemprop='description')
+	desc = ' '.join([extract_text(p) for p in dobj('p')])
+	info['description'] = standardize_desc(desc, 200)
+	urls = soup.find_all('a', itemprop='url')
+	info['url'] = urls[-1].get('href')
+	info['item_id'] = url_item(info['url'])
+	return info
 
-def try_page(page_url, page, get_count=False):
+def url_item(url):
+	matches = re.findall(r'c([0-9]+)l[0-9]+', url)
+	return int(matches[-1])
+
+def search_url(st):
+	id = st.split(sep='/')[-1]
+	return url2.format(id)
+
+def standardize_desc(desc, n):
+	desc = ' '.join(desc.split())
+	i = desc[:n+1].rindex(' ')
+	out = desc[:i]
+	if len(desc) > n:
+		out = out + '\n...'
+	return out
+
+def try_page(page_url, page=None, get_count=False):
 	for _ in range(TRIES):
 		response_code = 0
 		try:
@@ -84,32 +114,39 @@ def try_page(page_url, page, get_count=False):
 			if div is None:
 				continue
 			return int(div.text.split()[-2].replace(',',''))
-		df = page_df(response)
-		if df is None:
+		if page is not None:
+			out = page_df(response)
+		else:
+			out = listing_info(response)
+		if out is None:
 			print('z', end='', flush=True, file=sys.stdout)
 			time.sleep(SLEEP_TIME)
 			continue
 		else:
-			return df
-	print('\npage {0} response code {1}.'.format(page,response_code), flush=True, file=sys.stderr)
+			return out
+	if page is not None:
+		print('\npage {0} response code {1}.'.format(page,response_code), flush=True, file=sys.stderr)
+	else:
+		print('\nresponse code {0}.'.format(response_code), flush=True, file=sys.stderr)
 	return None
 
 
 def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=101, file_path=None):
 	if file_path is not None:
 		out_file = open(file_path, 'w')
-	page_url = url.format(item, location, 1, categories.item_code(item), location_codes[location])
+	page_url = url.format(item.name, location, 1, item.id, location_codes[location])
 	listings = try_page(page_url, 1, get_count=True)
 	end_page = min([(listings-1)//40 + 2, end_page])
 
-	print(item, listings, flush=True, file=sys.stdout)
+	print(item.name, item.id, listings, flush=True, file=sys.stdout)
+	print(page_url)
 
 	page_dfs = []
 	fail_count = 0
 	for page in range(start_page, end_page):
 		if page % 10 == 9: print('.', end='', flush=True)
 		fail = True
-		page_url = url.format(item, location, page, categories.item_code(item), location_codes[location])
+		page_url = url.format(item.name, location, page, item.id, location_codes[location])
 		df = try_page(page_url, page)
 		if df is None:
 			fail_count += 1
@@ -129,27 +166,28 @@ def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=101,
 	print('', file=sys.stdout)
 	if len(page_dfs) > 0:
 		df = pd.concat(page_dfs)
-		df['item_id'] = categories.item_dict[item]
+		df['item_id'] = item.id
 		print(len(df.index), file=sys.stdout)
 		return df
 	return None
 
-
-def collect_all(location=LOCATION, item=None, start_item=0, save_path=SAVE_PATH):
-	if item == None: items = [item[0] for item in categories.item_list][start_item:]
-	else: items = [item]
+'''
+def collect_all(location=LOCATION, items=None, start_item=0, save_path=SAVE_PATH):
+	if items == None:
+		items = categories.items()[start_item:]
 	for item in items:
-		file_path = save_path + 'kdat-{0}.csv'.format(item)
+		file_path = save_path + 'kdat-{0}.csv'.format(item.name)
 		df = scrape(item, location=location, file_path=file_path)
+'''
 
 def csv_to_df(item, save_path=SAVE_PATH):
-	file_path = 'data/kdat-' + item + '.csv'
+	file_path = 'data/kdat-' + item.name + '.csv'
 	data_file = open(file_path, 'r')
 	df = pd.read_csv(data_file, index_col=0)
 	data_file.close()
 
 	df.rename(columns={'Unnamed: 0':'id'}, inplace=True)
-	df['item_id'] = categories.item_dict[item]
+	df['item_id'] = item.id
 	df['price'] = df['price'].apply(int)
 	df['retreived'] = df['retreived'].apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f'))
 	df['post_date'] = df.apply(lambda row: post_date(row['retreived'], row['time_offset']), axis=1)

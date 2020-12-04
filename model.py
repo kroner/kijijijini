@@ -113,11 +113,10 @@ def print_nice(coefs,file=sys.stdout):
 
 # read in all the data for a category and return X and y
 def prepare_cat_data(cat):
-    items = categories.categories[cat]
     price_func = lambda x : math.log(x+25)
     #price_func = lambda x : math.sqrt(x)
     dfs = []
-    for (item, _) in items:
+    for item in cat.active_children():
         df = database.Listing.to_df(item)
         dfs.append(df)
     data = pd.concat(dfs)
@@ -166,19 +165,19 @@ class CatModel():
 
     def load(self):
         try:
-            model_path = open('models/est-' + self.cat + '.pkd', 'rb')
+            model_path = open('models/est-' + self.cat.name + '.pkd', 'rb')
             self.est = dill.load(model_path)
             model_path.close()
         except FileNotFoundError:
             self.fit()
 
     def fit(self):
-        print(self.cat, ': training... ', end='', file=sys.stdout)
+        print(self.cat.name, ': training... ', end='', file=sys.stdout)
         if self.X is None:
             print('no data', file=sys.stdout)
             return None
         self.est.fit(self.X, self.y)
-        model_path = open('models/est-' + self.cat + '.pkd', 'wb')
+        model_path = open('models/est-' + self.cat.name + '.pkd', 'wb')
         dill.dump(self.est, model_path)
         model_path.close()
         print('done', file=sys.stdout)
@@ -193,18 +192,20 @@ class CatModel():
 
 
 
-def train_all():
-    for cat in categories.categories:
-        est = CatModel(cat)
-        est.fit()
-        if est.X is not None:
-            print(est.r2_score())
+def train(cat):
+    est = CatModel(cat)
+    est.fit()
+    if est.X is not None:
+        print(est.r2_score())
     return None
 
 
 # predict the price for a dict with 'title', 'description', 'item'
 def predict_price(Xdict):
-    cat = categories.item_category[Xdict['item']]
+    if 'item' in Xdict:
+        item = categories.by_name(Xdict['item'])
+    else:
+        item = categories.by_id(Xdict['item_id'])
     sample_X = pd.DataFrame({
         'url' : [''],
         'title' : [Xdict['title']],
@@ -212,9 +213,9 @@ def predict_price(Xdict):
         'location' : [''],
         'post_date' : [datetime.now().date()],
         'retreived' : [datetime.now()],
-        'item_id' : [categories.item_dict[Xdict['item']]]
+        'item_id' : [item.id]
         })
-    est = CatModel(cat)
+    est = CatModel(item.category())
     est.load()
     sample_y = est.predict(sample_X)[0]
     price = math.exp(sample_y)-25
@@ -246,7 +247,7 @@ def some_stupid_test_stuff(est):
 '''
 
 if __name__ == '__main__':
-    est = CatModel('furniture')
+    est = CatModel(categories.by_name('furniture'))
     est.train()
     title = '18" tall metal bed frame'
     desc = 'Selling an 18" tall metal bed frame. Comes apart at corners for easy assembly. Great for condo as the height is perfect for under bed storage bins or luggate. Frame is in near perfect condition.  Comes with wooden slats.'
