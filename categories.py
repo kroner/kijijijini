@@ -52,6 +52,9 @@ def items():
 
 #############################################
 
+disabled_cats = ['free-stuff', 'garage-sale-yard-sale']
+disabled_items = ['clothing-lot', 'furniture-lot', 'baby-lot']
+
 buy_sell = Category('buy-sell', 10, "Buy & Sell")
 
 category_list = [
@@ -87,10 +90,11 @@ category_list = [
 	('garage-sale-yard-sale', 638, "Garage Sales"),
 	]
 
+
 for tup in category_list:
 	Category(*tup, parent=buy_sell)
-by_name('free-stuff').disable = True
-by_name('garage-sale-yard-sale').disable = True
+for cat_name in disabled_cats:
+	by_name(cat_name).disable = True
 
 
 	#('buy-sell', 10, "Buy & Sell"),
@@ -404,6 +408,6 @@ category_dict = {
 for cat in category_dict:
 	for tup in category_dict[cat]:
 		Category(*tup, parent=by_name(cat))
-by_name('clothing-lot').disable = True
-by_name('furniture-lot').disable = True
-by_name('baby-lot').disable = True
+
+for item_name in disabled_items:
+	by_name(item_name).disable = True

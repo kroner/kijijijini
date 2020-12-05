@@ -43,6 +43,7 @@ def extract_price(div):
 # listing that appear.
 def parse_search_page(response):
 	soup = BeautifulSoup(response.text, 'html.parser')
+	listings = None
 	listings_divs = soup.find_all('div', class_='regular-ad')
 	if len(listings_divs) == 0:
 		raise LookupError('response is missing the expected elements.')
@@ -51,8 +52,10 @@ def parse_search_page(response):
 	index = []
 	for div in listings_divs:
 		loc_time = extract_text(div.find('div', class_='location'))
-		if loc_time == '': loc_time = ['']
-		else: loc_time = loc_time.split('\n')
+		if loc_time == '':
+			loc_time = ['']
+		else:
+			loc_time = loc_time.split('\n')
 		#info['id'].append(int(div['data-listing-id']))
 		try:
 			info['price'].append(extract_price(div.find('div', class_='price')))
@@ -67,10 +70,8 @@ def parse_search_page(response):
 		except (TypeError, ValueError):
 			continue
 
-		div = soup.find('div',  class_='showing')
-		if div is None:
-			listings = None
-		else:
+		div = soup.find('div', class_='showing')
+		if div is not None:
 			listings = int(div.text.split()[-2].replace(',',''))
 	df = pd.DataFrame(info, index=index)
 	df.index.name = 'id'

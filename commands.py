@@ -1,4 +1,5 @@
 import click
+import datetime
 import categories
 import scrape as sc
 import model
@@ -39,11 +40,16 @@ def read_csvs():
 # Scrape new listings from kijiji and add them to the database
 @click.argument("cat")
 def update(cat):
-    if cat == 'all':
+    if cat == 'all' or cat == 'all-old':
         items = categories.items()
     else:
         items = categories.by_name(cat).active_children()
     for item in items:
+        if cat == 'all-old':
+            update_time = Item.get(item).update_time
+            delta = datetime.timedelta(hours=20)
+            if update_time is not None and datetime.datetime.now() - update_time < delta:
+                continue
         n0 = Listing.query.filter(Listing.item_id == item.id).count()
         Listing.update(item)
         n1 = Listing.query.filter(Listing.item_id == item.id).count()
