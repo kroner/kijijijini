@@ -89,8 +89,8 @@ category_list = [
 
 for tup in category_list:
 	Category(*tup, parent=buy_sell)
-by_name('free-stuff').disabled = True
-by_name('garage-sale-yard-sale').disabled = True
+by_name('free-stuff').disable = True
+by_name('garage-sale-yard-sale').disable = True
 
 
 	#('buy-sell', 10, "Buy & Sell"),
@@ -404,6 +404,6 @@ category_dict = {
 for cat in category_dict:
 	for tup in category_dict[cat]:
 		Category(*tup, parent=by_name(cat))
-by_name('clothing-lot').disabled = True
-by_name('furniture-lot').disabled = True
-by_name('baby-lot').disabled = True
+by_name('clothing-lot').disable = True
+by_name('furniture-lot').disable = True
+by_name('baby-lot').disable = True

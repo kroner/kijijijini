@@ -13,9 +13,11 @@ from bs4 import BeautifulSoup
 
 url = 'https://www.kijiji.ca/b-{0}/{1}/page-{2}/c{3}l{4}'
 url2 = 'https://www.kijiji.ca/v-/a/a/{0}'
-SLEEP_TIME = 60 # seconds to wait if no results are returned
-FAIL_CAP   =  5 # max number of failures before ending
-TRIES      =  5 # number of times to try the same query before failing
+SLEEP_TIME =  60 # seconds to wait if no results are returned
+FAIL_CAP   =   5 # max number of failures before ending
+TRIES      =   5 # number of times to try the same query before failing
+PAGE_LIMIT = 100 # search depth (100 is the limit imposed by Kijiji)
+CHAR_LIMIT = 200 # max description length (200 is the limit imposed by Kijiji)
 SAVE_PATH  = '/home/robert/Dropbox/TDI/kijijijini/data/'
 LOCATION   = 'city-of-toronto'
 
@@ -29,12 +31,21 @@ def extract_text(div):
 		return ''
 	return div.text.strip()
 
+def extract_price(div):
+	price = extract_text(div)
+	if price == 'Free':
+		price = 0.0
+	else:
+		price = float(re.sub(r'[^\d\-.]', '', price))
+	return price
 
-def page_df(response):
+# Take a response for a search page request and parse out the data for the
+# listing that appear.
+def parse_search_page(response):
 	soup = BeautifulSoup(response.text, 'html.parser')
 	listings_divs = soup.find_all('div', class_='regular-ad')
 	if len(listings_divs) == 0:
-		raise LookupError
+		raise LookupError('response is missing the expected elements.')
 	listings_divs = [div for div in listings_divs if len(div['class']) <= 2]
 	info = {'url':[], 'price':[], 'title':[], 'description':[], 'location':[], 'post_date':[], 'retreived':[]}
 	index = []
@@ -42,18 +53,13 @@ def page_df(response):
 		loc_time = extract_text(div.find('div', class_='location'))
 		if loc_time == '': loc_time = ['']
 		else: loc_time = loc_time.split('\n')
-		price = extract_text(div.find('div', class_='price'))
-		if price == 'Free':
-			price = 0.0
-		else:
-			try:
-				price = float(re.sub(r'[^\d\-.]', '', price))
-			except (TypeError, ValueError):
-				continue
 		index.append(int(div['data-listing-id']))
 		#info['id'].append(int(div['data-listing-id']))
 		info['url'].append(div['data-vip-url'])
-		info['price'].append(price)
+		try:
+			info['price'].append(extract_price(div.find('div', class_='price')))
+		except (TypeError, ValueError):
+			continue
 		info['title'].append(extract_text(div.find('div', class_='title')))
 		#info['distance'].append(extract_text(div.find('div', class_='distance')))
 		info['description'].append(extract_text(div.find('div', class_='description')))
@@ -61,25 +67,34 @@ def page_df(response):
 		info['post_date'].append(post_date(datetime.datetime.now(), loc_time[-1]))
 		info['retreived'].append(datetime.datetime.now())
 
+		div = soup.find('div',  class_='showing')
+		if div is None:
+			listings = None
+		else:
+			listings = int(div.text.split()[-2].replace(',',''))
 	df = pd.DataFrame(info, index=index)
 	df.index.name = 'id'
 	if len(df.index) == 0:
 		df = None
-	return df
+	return (df, listings)
 
-def listing_info(response):
+# Take a response for a search page request and parse out the data for the
+# listing that appear.
+def parse_listing_page(response):
 	info = dict()
 	soup = BeautifulSoup(response.text, 'html.parser')
 	title_obj = soup.find('h1', itemprop='name')
 	if title_obj is None:
-		raise LookupError
+		raise LookupError('response is missing the expected elements.')
 	info['title'] = extract_text(title_obj)
 	dobj = soup.find('div', itemprop='description')
 	desc = ' '.join([extract_text(p) for p in dobj('p')])
-	info['description'] = standardize_desc(desc, 200)
+	info['description'] = standardize_desc(desc, CHAR_LIMIT)
 	urls = soup.find_all('a', itemprop='url')
 	info['url'] = urls[-1].get('href')
 	info['item_id'] = url_item(info['url'])
+	info['price'] = extract_price(soup.find('span', itemprop='price'))
+
 	return info
 
 def url_item(url):
@@ -92,13 +107,14 @@ def search_url(st):
 
 def standardize_desc(desc, n):
 	desc = ' '.join(desc.split())
-	i = desc[:n+1].rindex(' ')
-	out = desc[:i]
 	if len(desc) > n:
-		out = out + '\n...'
-	return out
+		i = desc[:n+1].rindex(' ')
+		desc = desc[:i] + '\n...'
+	return desc
 
-def try_page(page_url, page=None, get_count=False):
+# Tries to get a response for a search page (if page_num is given) or a listing
+# page (if page_num is None).  Tries TRIES times before giving up.
+def try_page(page_url, page_num=None):
 	for _ in range(TRIES):
 		response_code = 0
 		try:
@@ -110,62 +126,47 @@ def try_page(page_url, page=None, get_count=False):
 		response_code = response.status_code
 		if response_code != 200:
 			continue
-		if get_count:
-			soup = BeautifulSoup(response.text, "lxml")
-			div = soup.find('div',  class_='showing')
-			if div is None:
-				continue
-			return int(div.text.split()[-2].replace(',',''))
 		try:
-			if page is not None:
-				out = page_df(response)
+			if page_num is not None:
+				out = parse_search_page(response)
 			else:
-				out = listing_info(response)
+				out = parse_listing_page(response)
 			return out
 		except LookupError:
 			print('z', end='', flush=True, file=sys.stdout)
 			time.sleep(SLEEP_TIME)
 			continue
-	if page is not None:
-		print('\npage {0} response code {1}.'.format(page,response_code), flush=True, file=sys.stderr)
+	if page_num is not None:
+		raise LookupError(f'page {page_num} response code {response_code}.')
 	else:
-		print('\nresponse code {0}.'.format(response_code), flush=True, file=sys.stderr)
-	raise LookupError
+		raise LookupError(f'listing response code {response_code}.')
 
 
-def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=101, file_path=None):
-	if file_path is not None:
-		out_file = open(file_path, 'w')
-	page_url = url.format(item.name, location, 1, item.id, location_codes[location])
-	listings = try_page(page_url, 1, get_count=True)
-	end_page = min([(listings-1)//40 + 2, end_page])
-
-	print('{0} ({1})'.format(item.name, item.id), flush=True, file=sys.stdout)
-	print('Current listings:', listings, flush=True, file=sys.stdout)
-
-	page_dfs = []
+def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=PAGE_LIMIT+1):
+	print(f'{item.name} ({item.id})', flush=True, file=sys.stdout)
 	fail_count = 0
-	for page in range(start_page, end_page):
+	page_dfs = []
+
+	page = start_page
+	while page < end_page:
 		if page % 10 == 9: print('.', end='', flush=True)
-		fail = True
 		page_url = url.format(item.name, location, page, item.id, location_codes[location])
 		try:
-			df = try_page(page_url, page)
-			if df is not None:
-				if file_path is not None:
-					df.to_csv(out_file, header=(page == 0))
-				#df.to_sql(name='listings', con=db.engine)
-				#db.session.commit()
-				page_dfs.append(df)
-				if start_date is not None and df['post_date'].iloc[-1] < start_date:
-					break
+			(df, listings) = try_page(page_url, page_num=page)
 		except LookupError:
 			fail_count += 1
 			if fail_count >= FAIL_CAP:
-				print('stopped at page {0}.'.format(page), flush=True, file=sys.stderr)
+				print(f'Warning: stopped at page {page}.', flush=True, file=sys.stderr)
 				break
-	if file_path is not None:
-		out_file.close()
+		if page == start_page:
+			if listings is not None:
+				end_page = min([(listings-1)//40 + 2, end_page])
+				print(f' current posted: {listings}\n ', end='', flush=True, file=sys.stdout)
+		if df is not None:
+			page_dfs.append(df)
+			if start_date is not None and df['post_date'].iloc[-1] < start_date:
+				break
+		page += 1
 	print('', file=sys.stdout)
 	if len(page_dfs) > 0:
 		df = pd.concat(page_dfs)
@@ -173,15 +174,7 @@ def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=101,
 		return df
 	return None
 
-'''
-def collect_all(location=LOCATION, items=None, start_item=0, save_path=SAVE_PATH):
-	if items == None:
-		items = categories.items()[start_item:]
-	for item in items:
-		file_path = save_path + 'kdat-{0}.csv'.format(item.name)
-		df = scrape(item, location=location, file_path=file_path)
-'''
-
+# csv is an old format for storing the data
 def csv_to_df(item, save_path=SAVE_PATH):
 	file_path = 'data/kdat-' + item.name + '.csv'
 	data_file = open(file_path, 'r')

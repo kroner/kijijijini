@@ -47,8 +47,7 @@ def update(cat):
         n0 = Listing.query.filter(Listing.item_id == item.id).count()
         Listing.update(item)
         n1 = Listing.query.filter(Listing.item_id == item.id).count()
-        print('New listings:', n1 - n0, '({0})'.format(n1), file=sys.stdout)
-        print(Listing.query.count(), file=sys.stdout)
+        print(f' new listings: {n1 - n0} ({n1})', file=sys.stdout)
 
 # Retrain the models
 @click.argument("cat")

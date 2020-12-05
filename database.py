@@ -1,8 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm.exc import NoResultFound
 import pandas as pd
-import categories
-from categories import Category
 import sys
 import scrape as sc
 

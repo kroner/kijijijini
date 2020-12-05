@@ -7,9 +7,12 @@
       <div class="row">
         <div class="col-lg-8 mx-auto">
           <h4>listing url or id:</h4>
+          <div style="text-align: center" class="text-danger">
+            {{ error }}
+          </div>
           <form action="/" id="url" method="post">
             <div class="form-group">
-              <input type="text" name="url" class="form-control" id="titleBox" placeholder="">
+              <input type="text" name="url" class="form-control" id="titleBox" value="{{ url }}">
             </div>
             <input type="hidden" name="form" value="url">
             <input class="btn btn-info" type="submit" value="Submit">
@@ -26,42 +29,25 @@
           <h4>your listing:</h4>
           <form action="/" id="listing" method="post">
             <div class="form-group">
-              <select class="form-control" name="item" id="item" required>
-                <option value = "" selected>Item type</option>
-                <option value = "chair-recliner">chair-recliner</option>
-                <option value = "bed-mattress">bed-mattress</option>
-                <option value = "couch-futon">couch-futon</option>
-                <option value = "dining-table-set">dining-table-set</option>
-                <option value = "coffee-table-ottoman">coffee-table-ottoman</option>
-                <option value = "hutch-display-cabinet">hutch-display-cabinet</option>
-                <option value = "dresser-wardrobe">dresser-wardrobe</option>
-                <option value = "furniture-other-table">furniture-other-table</option>
-                <option value = "bookcase-shelves">bookcase-shelves</option>
-                <option value = "other-furniture">other-furniture</option>
-                <option value = "buy-sell-desks">buy-sell-desks</option>
-                <option value = "tv-table-entertainment-unit">tv-table-entertainment-unit</option>
-                <!--
-                <option value = "indoor-decor-accent">indoor-decor-accent</option>
-                <option value = "kitchen-dining">kitchen-dining</option>
-                <option value = "indoor-lighting-fan">indoor-lighting-fan</option>
-                <option value = "rug-carpet-runner">rug-carpet-runner</option>
-                <option value = "home-indoor-other">home-indoor-other</option>
-                <option value = "storage-organization">storage-organization</option>
-                <option value = "bathware-bathroom">bathware-bathroom</option>
-                <option value = "bedding">bedding</option>
-                <option value = "window-treatment">window-treatment</option>
-                <option value = "holiday-event-seasonal">holiday-event-seasonal</option>
-                <option value = "fireplace-firewood">fireplace-firewood</option>
-                -->
-              </select>
+              <div class="row">
+                <div class="col">
+                  <select class="form-control" name="category" id="category" required>
+                    <!--<option value = "" selected>item category</option>-->
+                  </select>
+                </div>
+                <div class="col">
+                  <select class="form-control" name="item" id="item" required>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
-              <input type="text" class="form-control" name="title" id="title" placeholder="Title" value="{{ title | safe }}">
+              <input type="text" class="form-control" name="title" id="title" placeholder="title" value="{{ title }}">
             </div>
 
             <div class="form-group">
-              <textarea class="form-control" name="description" id="description" rows="4" placeholder="Description">{{ description | safe }}</textarea>
+              <textarea class="form-control" name="description" id="description" rows="4" placeholder="description">{{ description }}</textarea>
             </div>
             <input type="hidden" name="form" value="listing">
             <input class="btn btn-info" type="submit" value="Submit">
@@ -76,8 +62,23 @@
     <div class="container">
       <div class="row">
         <div class="col-lg-8 mx-auto">
-          <h4>price suggestion:</h4>
-          <h4 class="text-success">&nbsp;&nbsp; {{ price }}</h4>
+          <div class="row">
+            <div class="col">
+              <h4>{{ price_str }}</h4>
+            </div>
+            <div class="col">
+              <h4 style="text-align: right">&nbsp; {{ price }}</h4>
+            </div>
+          </div>
+          <br>
+          <div class="row">
+            <div class="col">
+              <h4>price suggestion:</h4>
+            </div>
+            <div class="col">
+              <h3 style="text-align: right" class="text-success">{{ sug_price }}</h3>
+            </div>
+          </div>
           <br>
           <br>
         </div>
@@ -85,4 +86,46 @@
     </div>
   </section>
 
+  <script>
+    var category_selects = {{ category_selects | safe }}
+    var item_selects = {{ item_selects | safe }}
+    var category_value = '{{ category | safe }}'
+    var item_value = '{{ item | safe }}'
+
+    // removes select options except the first
+    function removeOptions(sel) {
+      var len = sel.options.length;
+      for (var i=len-1; i>=0; i--) {
+        sel.remove(i);
+      };
+    }
+
+    function appendOptions(sel, opts) {
+      opts.forEach(function (opt) {
+        var optEl = document.createElement('option');
+        optEl.value = opt[0];
+        optEl.innerHTML = opt[1];
+        sel.appendChild(optEl);
+      });
+    }
+
+    // anonymous function assigned to onchange event of controlling select box
+    document.getElementById('category').onchange = function(e) {
+      var sel = document.getElementById('item');
+      removeOptions(sel);
+      appendOptions(sel, item_selects[this.value]);
+    };
+
+    // populate associated select box as page loads
+    function populate() {
+      var selc = document.getElementById('category');
+      appendOptions(selc, category_selects);
+      selc.value = category_value;
+
+      var seli = document.getElementById('item');
+      appendOptions(seli, item_selects[selc.value]);
+      seli.value = item_value;
+    }
+    window.onload = populate();
+  </script>
 {% endblock %}
