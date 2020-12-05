@@ -53,19 +53,19 @@ def parse_search_page(response):
 		loc_time = extract_text(div.find('div', class_='location'))
 		if loc_time == '': loc_time = ['']
 		else: loc_time = loc_time.split('\n')
-		index.append(int(div['data-listing-id']))
 		#info['id'].append(int(div['data-listing-id']))
-		info['url'].append(div['data-vip-url'])
 		try:
 			info['price'].append(extract_price(div.find('div', class_='price')))
+			info['url'].append(div['data-vip-url'])
+			info['title'].append(extract_text(div.find('div', class_='title')))
+			#info['distance'].append(extract_text(div.find('div', class_='distance')))
+			info['description'].append(extract_text(div.find('div', class_='description')))
+			info['location'].append(loc_time[0])
+			info['post_date'].append(post_date(datetime.datetime.now(), loc_time[-1]))
+			info['retreived'].append(datetime.datetime.now())
+			index.append(int(div['data-listing-id']))
 		except (TypeError, ValueError):
 			continue
-		info['title'].append(extract_text(div.find('div', class_='title')))
-		#info['distance'].append(extract_text(div.find('div', class_='distance')))
-		info['description'].append(extract_text(div.find('div', class_='description')))
-		info['location'].append(loc_time[0])
-		info['post_date'].append(post_date(datetime.datetime.now(), loc_time[-1]))
-		info['retreived'].append(datetime.datetime.now())
 
 		div = soup.find('div',  class_='showing')
 		if div is None:

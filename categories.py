@@ -55,9 +55,9 @@ def items():
 buy_sell = Category('buy-sell', 10, "Buy & Sell")
 
 category_list = [
+	('furniture', 235, "Furniture"),
 	('clothing', 274, "Clothing"),
 	('art-collectibles', 12, "Arts & Collectibles"),
-	('furniture', 235, "Furniture"),
 	('home-indoor', 717, "Home - Indoor"),
 	('books', 109, "Books"),
 	('buy-sell-other', 26, "Other"),
