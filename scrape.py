@@ -14,8 +14,8 @@ from bs4 import BeautifulSoup
 url = 'https://www.kijiji.ca/b-{0}/{1}/page-{2}/c{3}l{4}'
 url2 = 'https://www.kijiji.ca/v-/a/a/{0}'
 SLEEP_TIME =  60 # seconds to wait if no results are returned
-FAIL_CAP   =   5 # max number of failures before ending
-TRIES      =   5 # number of times to try the same query before failing
+TRIES      =   5 # number of times to try the same query before skipping
+FAIL_CAP   =  15 # max number of skips before throwing an error
 PAGE_LIMIT = 100 # search depth (100 is the limit imposed by Kijiji)
 CHAR_LIMIT = 200 # max description length (200 is the limit imposed by Kijiji)
 SAVE_PATH  = '/home/robert/Dropbox/TDI/kijijijini/data/'

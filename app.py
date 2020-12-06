@@ -2,6 +2,7 @@ import os
 import sys
 from flask import Flask, render_template, request, redirect
 import json
+import altair
 # init flask app instance
 app = Flask(__name__)
 # setup with the configuration provided by the user / environment
@@ -27,13 +28,10 @@ def index():
 	if request.method == 'POST':
 		try:
 			if request.form['form'] == 'listing':
-				X['item'] = request.form['item']
-				X['title'] = request.form['title']
 				X['description'] = scrape.standardize_desc(request.form['description'], 200)
 			else:
 				page_url = scrape.search_url(request.form['url'])
 				X = scrape.try_page(page_url, page_num=None)
-				X['url'] = request.form['url']
 				X['price'] = '$' + '{:.0f}'.format(X['price'])
 				X['price_str'] = 'listed price:'
 				X['item'] = categories.by_id(X['item_id']).name
@@ -57,6 +55,20 @@ def index():
 		item_selects=json.dumps(item_data)
 		)
 	return html
+
+
+@app.route('/data')
+def data():
+	item = categories.by_id(278)
+	data = database.Listing.to_df(item)['post_date']
+	data = data.apply(lambda x : x.isoformat()).to_frame(name='post_date')
+	print(data.head())
+	chart = altair.Chart(data).mark_bar().encode(
+		altair.X('post_date'),
+		y='count()'
+	)
+	chart.save('static/charts/hist-chart-' + item.name + '.json')
+	return render_template('data.html', item=item.name)
 
 
 @app.route('/about')

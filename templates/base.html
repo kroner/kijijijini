@@ -31,6 +31,9 @@
       <div class="collapse navbar-collapse" id="navbarResponsive">
         <ul class="navbar-nav ml-auto">
           <li class="nav-item">
+            <a class="nav-link js-scroll-trigger" href="/data">data</a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link js-scroll-trigger" href="/about">about</a>
           </li>
           <li class="nav-item">
@@ -60,6 +63,44 @@
     </div>
     <!-- /.container -->
   </footer>
+
+  <script>
+    // removes select options except the first
+    function removeOptions(sel) {
+      var len = sel.options.length;
+      for (var i=len-1; i>=0; i--) {
+        sel.remove(i);
+      };
+    }
+
+    function appendOptions(sel, opts) {
+      opts.forEach(function (opt) {
+        var optEl = document.createElement('option');
+        optEl.value = opt[0];
+        optEl.innerHTML = opt[1];
+        sel.appendChild(optEl);
+      });
+    }
+
+    // anonymous function assigned to onchange event of controlling select box
+    document.getElementById('category').onchange = function(e) {
+      var sel = document.getElementById('item');
+      removeOptions(sel);
+      appendOptions(sel, item_selects[this.value]);
+    };
+
+    // populate associated select box as page loads
+    function populate() {
+      var selc = document.getElementById('category');
+      appendOptions(selc, category_selects);
+      selc.value = category_value;
+
+      var seli = document.getElementById('item');
+      appendOptions(seli, item_selects[selc.value]);
+      seli.value = item_value;
+    }
+    window.onload = populate();
+  </script>
 
   <!-- Bootstrap core JavaScript -->
   <script src="{{ url_for('static',filename='vendor/jquery/jquery.min.js') }}"></script>

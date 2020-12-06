@@ -5,12 +5,12 @@ names = dict()
 # A class for item types and categories
 # Disabled items are still scraped into the database but not used in models
 class Category():
-	def __init__(self, name, id, string, parent=None, disable=False):
+	def __init__(self, name, id, string, parent=None, disabled=False):
 		self.name = name
 		self.id = id
 		self.string = string
 		self.parent = parent
-		self.disable = disable
+		self.disabled = disabled
 		if parent is not None:
 			parent.children.append(self)
 		self.children = []
@@ -19,7 +19,7 @@ class Category():
 
 	def active_children(self):
 		if self.children:
-			return [c for c in self.children if not c.disable]
+			return [c for c in self.children if not c.disabled]
 		return [self]
 
 	def category(self):
@@ -29,7 +29,6 @@ class Category():
 
 # Retreive item by its id
 def by_id(id):
-	print(ids.keys())
 	return ids[id]
 
 # Retreive item by its name
@@ -37,15 +36,18 @@ def by_name(name):
 	return names[name]
 
 # List all non-disabled cateogries
-def categories():
+def categories(disabled=False):
 	return buy_sell.active_children()
 
 # List all non-disabled items
-def items():
+def items(disabled=False):
 	items = []
-	for cat in categories():
+	for cat in categories(disabled=disabled):
 		if cat.children:
-			items.extend(cat.active_children())
+			if disabled:
+				items.extend(cat.children)
+			else:
+				items.extend(cat.active_children())
 		else:
 			items.append(cat)
 	return items
@@ -94,7 +96,7 @@ category_list = [
 for tup in category_list:
 	Category(*tup, parent=buy_sell)
 for cat_name in disabled_cats:
-	by_name(cat_name).disable = True
+	by_name(cat_name).disabled = True
 
 
 	#('buy-sell', 10, "Buy & Sell"),
@@ -403,6 +405,14 @@ category_dict = {
 	('tvs', 15093002, "TVs"),
 	('video-tv-accessories', 15093003, "Video & TV Accessories"),
 	],
+
+'free-stuff' : [
+	('free-stuff', 17220001, "Free Stuff"),
+	],
+
+'garage-sale-yard-sale' : [
+	('garage-sale-yard-sale', 638, "Garage Sales"),
+	],
 	}
 
 for cat in category_dict:
@@ -410,4 +420,4 @@ for cat in category_dict:
 		Category(*tup, parent=by_name(cat))
 
 for item_name in disabled_items:
-	by_name(item_name).disable = True
+	by_name(item_name).disabled = True

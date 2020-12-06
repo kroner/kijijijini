@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+  <section id="kijijijini">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 mx-auto">
+          <h4>About the data:</h4>
+          <p>
+            Listings are pulled from Kijiji by
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="hist" class="bg-light">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 mx-auto">
+          <h4>Some time series:</h4>
+          <div id="hist-chart">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega@4"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-lite@3.2.1"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-embed@3"></script>
+  <script>
+    var spec = "{{ url_for('static',filename='charts/hist-chart-') }}{{ item }}.json";
+    vegaEmbed("#hist-chart", spec);
+  </script>
+{% endblock %}
