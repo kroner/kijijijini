@@ -48,9 +48,10 @@ class Listing(db.Model):
         dfs = []
         q = Listing.query.filter(Listing.item_id == item.id)
         dfs.append(pd.read_sql(q.statement, db.session.bind))
-        for child in item.children():
-            if child != item:
-                dfs.append(Listing.to_df(child, children=True, disabled=disabled))
+        if children:
+            for child in item.children():
+                if child != item:
+                    dfs.append(Listing.to_df(child, children=True, disabled=disabled))
         return pd.concat(dfs)
 
     def __repr__(self):
