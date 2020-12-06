@@ -114,12 +114,7 @@ def print_nice(coefs,file=sys.stdout):
 # read in all the data for a category and return X and y
 def prepare_cat_data(cat):
     price_func = lambda x : math.log(x+25)
-    #price_func = lambda x : math.sqrt(x)
-    dfs = []
-    for item in cat.active_children():
-        df = database.Listing.to_df(item)
-        dfs.append(df)
-    data = pd.concat(dfs)
+    data = database.Listing.to_df(cat, children=True)
     if len(data.index) == 0:
         return (None, None)
     X = data.drop('price', axis=1)

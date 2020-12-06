@@ -44,7 +44,7 @@ def update(cat):
     if cat == 'all' or cat == 'all-old':
         items = categories.items(disabled=True)
     else:
-        items = categories.by_name(cat).children
+        items = categories.by_name(cat).children(disabled=True)
     for item in items:
         if cat == 'all-old':
             update_time = Item.get(item).update_time

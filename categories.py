@@ -12,14 +12,14 @@ class Category():
 		self.parent = parent
 		self.disabled = disabled
 		if parent is not None:
-			parent.children.append(self)
-		self.children = []
+			parent._children.append(self)
+		self._children = []
 		ids[id] = self
 		names[name] = self
 
-	def active_children(self):
-		if self.children:
-			return [c for c in self.children if not c.disabled]
+	def children(self, disabled=False):
+		if self._children:
+			return [c for c in self._children if not (c.disabled and disabled)]
 		return [self]
 
 	def category(self):
@@ -37,27 +37,25 @@ def by_name(name):
 
 # List all non-disabled cateogries
 def categories(disabled=False):
-	return buy_sell.active_children()
+	return buy_sell.children(disabled=disabled)
 
 # List all non-disabled items
 def items(disabled=False):
 	items = []
 	for cat in categories(disabled=disabled):
-		if cat.children:
-			if disabled:
-				items.extend(cat.children)
-			else:
-				items.extend(cat.active_children())
+		if cat._children:
+			items.extend(cat.children(disabled=disabled))
 		else:
 			items.append(cat)
 	return items
+
 
 #############################################
 
 disabled_cats = ['free-stuff', 'garage-sale-yard-sale']
 disabled_items = ['clothing-lot', 'furniture-lot', 'baby-lot']
 
-buy_sell = Category('buy-sell', 10, "Buy & Sell")
+buy_sell = Category('buy-sell', 10, "All")
 
 category_list = [
 	('furniture', 235, "Furniture"),

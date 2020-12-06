@@ -16,18 +16,48 @@
     </div>
   </section>
 
-  <section id="hist" class="bg-light">
+
+  <section id="listingInput">
     <div class="container">
       <div class="row">
         <div class="col-lg-8 mx-auto">
-          <h4>Some time series:</h4>
-          <div id="hist-chart">
-          </div>
+          <form action="/data" id="listing" method="post">
+            <div class="form-group">
+              <div class="row">
+                <div class="col">
+                  <select class="form-control" name="category" id="category" required>
+                    <!--<option value = "" selected>item category</option>-->
+                  </select>
+                </div>
+                <div class="col">
+                  <select class="form-control" name="item" id="item" required>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <input class="btn btn-info" type="submit" value="Submit">
+          </form>
+          <br>
+          <h4>Number of postings over time:</h4>
+          <div id="hist-chart" style="align:center"></div>
+          <br>
+          <h4>Average residuals (log scale):</h4>
+          <div id="residual-chart" style="align:center"></div>
+          <br>
+          <h4>Average adjusted price (log scale):</h4>
+          <div id="price-chart" style="align:center"></div>
         </div>
       </div>
     </div>
   </section>
 
+  <script>
+    var category_selects = {{ category_selects | safe }}
+    var item_selects = {{ item_selects | safe }}
+    var category_value = '{{ category | safe }}'
+    var item_value = '{{ item | safe }}'
+  </script>
 
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega@4"></script>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-lite@3.2.1"></script>

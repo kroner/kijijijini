@@ -44,10 +44,14 @@ class Listing(db.Model):
             db.session.commit()
 
     # Create dataframe for item listings in table
-    def to_df(item):
+    def to_df(item, children=True, disabled=False):
+        dfs = []
         q = Listing.query.filter(Listing.item_id == item.id)
-        df = pd.read_sql(q.statement, db.session.bind)
-        return df
+        dfs.append(pd.read_sql(q.statement, db.session.bind))
+        for child in item.children():
+            if child != item:
+                dfs.append(Listing.to_df(child, children=True, disabled=disabled))
+        return pd.concat(dfs)
 
     def __repr__(self):
         return f'Listing: {self.id}'
