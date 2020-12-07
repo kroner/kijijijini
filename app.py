@@ -27,20 +27,20 @@ def index():
 	X = {'category':'', 'item':'', 'title':'', 'description':'', 'url':'', 'price':'', 'price_str':'', 'sug_price':'', 'error':''}
 	X = {**X, **request.form}
 	if request.method == 'POST':
-		#try:
-		if request.form['form'] == 'listing':
-			X['description'] = scrape.standardize_desc(request.form['description'], 200)
-		else:
-			page_url = scrape.search_url(request.form['url'])
-			X = scrape.try_page(page_url, page_num=None)
-			X['url'] = request.form['url']
-			X['price'] = '$' + '{:.0f}'.format(X['price'])
-			X['price_str'] = 'listed price:'
-			X['item'] = categories.by_id(X['item_id']).name
-		sug_price = model.predict_price(X)
-		X['sug_price'] = '$' + '{:.0f}'.format(sug_price)
-		#except:
-			#X['error'] = "Can't find listing."
+		try:
+			if request.form['form'] == 'listing':
+				X['description'] = scrape.standardize_desc(request.form['description'], 200)
+			else:
+				page_url = scrape.search_url(request.form['url'])
+				X = scrape.try_page(page_url, page_num=None)
+				X['url'] = request.form['url']
+				X['price'] = '$' + '{:.0f}'.format(X['price'])
+				X['price_str'] = 'listed price:'
+				X['item'] = categories.by_id(X['item_id']).name
+			sug_price = model.predict_price(X)
+			X['sug_price'] = '$' + '{:.0f}'.format(sug_price)
+		except:
+			X['error'] = "Can't find listing."
 	if X['item'] == '':
 		X['item'] = categories.items()[0].name
 	X['category'] = categories.by_name(X['item']).category().name
@@ -74,27 +74,11 @@ def data():
 			df2['item'] = df2['item_id'].apply(lambda x : categories.by_id(x).name)
 		df2['post_str'] = df2['post_date'].apply(lambda x : x.isoformat())
 		data = df2[['item', 'post_str', 'count']]
-		print(data.head())
 		chart = alt.Chart(data).mark_bar().encode(
 			alt.X('post_str'),
 			alt.Y('count'),
 			color='item'
 		).properties(width=600, height=400)
-		'''
-		df = database.Listing.to_df(item)
-		df['post_str'] = df['post_date'].apply(lambda x : x.isoformat())
-		if item == categories.buy_sell:
-			df['item'] = df['item_id'].apply(lambda x : categories.by_id(x).category().name)
-		else:
-			df['item'] = df['item_id'].apply(lambda x : categories.by_id(x).name)
-		data = df[['item', 'post_str']]
-		print(data.head())
-		chart = alt.Chart(data).mark_bar().encode(
-			alt.X('post_str'),
-			y='count()',
-			color='item'
-		).properties(width=600, height=400)
-		'''
 		chart.save('static/charts/hist-chart-' + item.name + '.json')
 
 	Y = select_data(include_all=True)

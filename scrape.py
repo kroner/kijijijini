@@ -165,7 +165,7 @@ def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=PAGE
 				print(f' current posted: {listings}\n ', end='', flush=True, file=sys.stdout)
 		if df is not None:
 			page_dfs.append(df)
-			if start_date is not None and df['post_date'].iloc[-1] < start_date:
+			if start_date is not None and df['post_date'].iloc[-1] < start_date - datetime.timedelta(days=4):
 				break
 		page += 1
 	print('', file=sys.stdout)
