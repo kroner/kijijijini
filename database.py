@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 import pandas as pd
 import sys
@@ -53,6 +54,14 @@ class Listing(db.Model):
                 if child != item:
                     dfs.append(Listing.to_df(child, children=True, disabled=disabled))
         return pd.concat(dfs)
+
+    def item_date_count():
+        q = Listing.query.with_entities(
+            Listing.item_id,
+            Listing.post_date,
+            func.count().label('count')
+            ).group_by(Listing.item_id, Listing.post_date)
+        return pd.read_sql(q.statement, db.session.bind)
 
     def __repr__(self):
         return f'Listing: {self.id}'

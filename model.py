@@ -217,6 +217,15 @@ def predict_price(Xdict):
     return price
 
 '''
+def histogram_data(item):
+	df = database.Listing.to_df(item)
+	df['post_str'] = df['post_date'].apply(lambda x : x.isoformat())
+	if item == categories.buy_sell:
+		df['item'] = df['item_id'].apply(lambda x : categories.by_id(x).category().name)
+	else:
+		df['item'] = df['item_id'].apply(lambda x : categories.by_id(x).name)
+	data = df[['item', 'post_str']]
+
 def some_stupid_test_stuff(est):
 	coefs = pipe.named_steps.est.coef_
 	#print(coefs[:50])

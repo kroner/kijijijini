@@ -27,6 +27,9 @@ class Category():
 			return self
 		return self.parent
 
+	def __repr__(self):
+		return f'Category: {self.name} ({self.id})'
+
 # Retreive item by its id
 def by_id(id):
 	return ids[id]
@@ -52,8 +55,7 @@ def items(disabled=False):
 
 #############################################
 
-disabled_cats = ['free-stuff', 'garage-sale-yard-sale']
-disabled_items = ['clothing-lot', 'furniture-lot', 'baby-lot']
+disabled_list = ['free-stuff', 'garage-sale-yard-sale', 'clothing-lot', 'furniture-lot', 'baby-lot']
 
 buy_sell = Category('buy-sell', 10, "All")
 
@@ -89,12 +91,6 @@ category_list = [
 	('free-stuff', 17220001, "Free Stuff"),
 	('garage-sale-yard-sale', 638, "Garage Sales"),
 	]
-
-
-for tup in category_list:
-	Category(*tup, parent=buy_sell)
-for cat_name in disabled_cats:
-	by_name(cat_name).disabled = True
 
 
 	#('buy-sell', 10, "Buy & Sell"),
@@ -413,9 +409,13 @@ category_dict = {
 	],
 	}
 
+for tup in category_list:
+	disabled = tup[0] in disabled_list
+	Category(*tup, parent=buy_sell, disabled=disabled)
+
 for cat in category_dict:
 	for tup in category_dict[cat]:
-		Category(*tup, parent=by_name(cat))
+		disabled = tup[0] in disabled_list
+		Category(*tup, parent=by_name(cat), disabled=disabled)
 
-for item_name in disabled_items:
-	by_name(item_name).disabled = True
+#print(len([item.name for item in items(disabled=True) if item not in items()]))
