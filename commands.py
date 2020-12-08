@@ -77,7 +77,7 @@ def chart(cat):
     else:
         cats = [categories.by_name(cat)]
     for cat in cats:
-        print(cat.name + 'chart...', end='')
+        print(cat.name + ' charts...', end='')
         ch.histogram(cat)
         ch.prices(cat)
         ch.residuals(cat)

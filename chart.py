@@ -1,10 +1,11 @@
 import altair as alt
 import datetime
+import os
+import pandas as pd
 
 import categories
 from database import Listing
 import model
-import pandas as pd
 
 def prepare_chart_data(df, item, aggregate=True):
     def cat_selector(x):
@@ -34,6 +35,11 @@ def histogram(item):
         y='count:Q',
         color='item'
     ).properties(width=600, height=400)
+
+    try:
+        os.makedirs('static/charts', exist_ok=True)
+    except FileExistsError:
+        pass
     chart.save('static/charts/hist-chart-' + item.name + '.json')
 
 
@@ -51,12 +57,18 @@ def residuals(item):
             continue
         X['residual'] = y - est.predict(X)
         Xs.append(prepare_chart_data(X.copy(), item, aggregate=False))
+    if not Xs:
+        return None
     X_prep = pd.concat(Xs)
     data = X_prep[['item', 'date', 'residual']].groupby(['item', 'date']).mean().reset_index()
     data_sum = X_prep[['date', 'residual']].groupby('date').mean().reset_index()
 
     chart = rolling_mean_chart(data, data_sum, 'residual')
 
+    try:
+        os.makedirs('static/charts', exist_ok=True)
+    except FileExistsError:
+        pass
     chart.save('static/charts/residual-chart-' + item.name + '.json')
 
 
@@ -74,6 +86,10 @@ def prices(item):
 
     chart = rolling_mean_chart(data, data_sum, 'log_price')
 
+    try:
+        os.makedirs('static/charts', exist_ok=True)
+    except FileExistsError:
+        pass
     chart.save('static/charts/price-chart-' + item.name + '.json')
 
 

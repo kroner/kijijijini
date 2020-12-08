@@ -4,6 +4,7 @@ import math
 from collections import defaultdict
 import heapq
 import dill
+import os
 from datetime import datetime
 from sklearn import base
 from sklearn.linear_model import LinearRegression
@@ -174,14 +175,18 @@ class CatModel():
             print('no data', file=sys.stdout)
             return None
         self.est.fit(X, y)
+        try:
+            os.makedirs('models')
+        except FileExistsError:
+            pass
         model_path = open('models/est-' + self.cat.name + '.pkd', 'wb')
         dill.dump(self.est, model_path)
         model_path.close()
         print('done', file=sys.stdout)
         print(' ', len(X.index), file=sys.stdout)
         if print_r2:
-            y_pred = self.est.predict(self.X)
-            print(r2_score(self.y, y_pred))
+            y_pred = self.est.predict(X)
+            print(r2_score(y, y_pred))
 
     def predict(self, X):
         return self.est.predict(X)
