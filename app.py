@@ -61,7 +61,6 @@ def data():
 		X['item'] = item.name
 		X['category'] = item.name
 
-	commands.chart(X['item'])
 	Y = select_data(include_all=True)
 	return render_template('data.html', **X, **Y)
 
