@@ -19,8 +19,9 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import HashingVectorizer
+
 import categories
-import database
+from database import Listing
 
 class ModelTransformer(base.BaseEstimator, base.TransformerMixin):
     def __init__(self, est):
@@ -114,7 +115,7 @@ def print_nice(coefs,file=sys.stdout):
 # read in all the data for a category and return X and y
 def prepare_cat_data(cat):
     price_func = lambda x : math.log(x+25)
-    data = database.Listing.to_df(cat, children=True)
+    data = Listing.to_df(cat, children=True)
     if len(data.index) == 0:
         return (None, None)
     X = data.drop('price', axis=1)
@@ -125,7 +126,7 @@ def prepare_cat_data(cat):
 class CatModel():
     def __init__(self, cat):
         self.cat = cat
-        (self.X, self.y) = prepare_cat_data(self.cat)
+        (self.X, self.y) = (None, None)
         '''
         title_lim = 400
         desc_lim = 550
@@ -166,21 +167,21 @@ class CatModel():
         except FileNotFoundError:
             self.fit()
 
-    def fit(self):
+    def fit(self, print_r2=False):
+        (X, y) = prepare_cat_data(self.cat)
         print(self.cat.name, ': training... ', end='', file=sys.stdout)
-        if self.X is None:
+        if X is None:
             print('no data', file=sys.stdout)
             return None
-        self.est.fit(self.X, self.y)
+        self.est.fit(X, y)
         model_path = open('models/est-' + self.cat.name + '.pkd', 'wb')
         dill.dump(self.est, model_path)
         model_path.close()
         print('done', file=sys.stdout)
-        print(' ', len(self.X.index), file=sys.stdout)
-
-    def r2_score(self):
-        y_pred = self.est.predict(self.X)
-        return r2_score(self.y, y_pred)
+        print(' ', len(X.index), file=sys.stdout)
+        if print_r2:
+            y_pred = self.est.predict(self.X)
+            print(r2_score(self.y, y_pred))
 
     def predict(self, X):
         return self.est.predict(X)
@@ -189,9 +190,7 @@ class CatModel():
 
 def train(cat):
     est = CatModel(cat)
-    est.fit()
-    if est.X is not None:
-        print(est.r2_score())
+    est.fit(print_r2=True)
     return None
 
 
@@ -218,7 +217,7 @@ def predict_price(Xdict):
 
 '''
 def histogram_data(item):
-	df = database.Listing.to_df(item)
+	df = Listing.to_df(item)
 	df['post_str'] = df['post_date'].apply(lambda x : x.isoformat())
 	if item == categories.buy_sell:
 		df['item'] = df['item_id'].apply(lambda x : categories.by_id(x).category().name)

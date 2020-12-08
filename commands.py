@@ -1,23 +1,23 @@
 import click
 import datetime
+import sys
+
 import categories
 import scrape as sc
 import model
-import database
+import chart as ch
 from database import db, Listing, Item
-import sys
 
 # Creates database table
 @click.argument("table")
 def create(table):
     if table == 'items':
         Item.__table__.create(db.engine)
-        #for item in categories.all_items():
-        #    database.add_item(item)
     if table == 'listings':
         Listing.__table__.create(db.engine)
 
-# Cleans database
+# Drop database table
+# CAUTION!
 @click.argument("table")
 def drop(table):
     if table == 'items':
@@ -40,24 +40,25 @@ def read_csvs():
 
 # Scrape new listings from kijiji and add them to the database
 @click.argument("cat")
-def update(cat):
+def scrape(cat):
+    delta = datetime.timedelta(hours=20) # interval for deciding if results are old
     if cat == 'all' or cat == 'all-old':
         items = categories.items(disabled=True)
     else:
         items = categories.by_name(cat).children(disabled=True)
     for item in items:
         if cat == 'all-old':
-            update_time = Item.get(item).update_time
-            delta = datetime.timedelta(hours=20)
-            if update_time is not None and datetime.datetime.now() - update_time < delta:
+            if not Item.get(item).is_old(delta):
                 continue
         n0 = Listing.query.filter(Listing.item_id == item.id).count()
-        Listing.update(item)
+        i = Item.get(item)
+        df = sc.scrape(item, start_date=i.last_date())
+        i.update(df)
         n1 = Listing.query.filter(Listing.item_id == item.id).count()
         print(f' new listings: {n1 - n0} ({n1})', file=sys.stdout)
 
 # Retrain the models
-@click.argument("cat")
+@click.argument('cat')
 def train(cat):
     if cat == 'all':
         cats = categories.categories()
@@ -67,7 +68,33 @@ def train(cat):
         model.train(cat)
 
 
+@click.argument('cat')
+def chart(cat):
+    if cat == 'all':
+        cats = [categories.buy_sell]
+        cats.extend(categories.categories())
+        cats.extend(categories.items())
+    else:
+        cats = [categories.by_name(cat)]
+    for cat in cats:
+        ch.histogram(cat)
+        ch.prices(cat)
+        ch.residuals(cat)
+
+
+def update():
+    scrape('all-old')
+    train('all')
+    chart('all')
+
 def init_app(app):
-    commands = [create, drop, update, train]
+    commands = [
+        create,
+        #drop,
+        scrape,
+        update,
+        train,
+        chart,
+        ]
     for command in commands:
         app.cli.add_command(app.cli.command()(command))

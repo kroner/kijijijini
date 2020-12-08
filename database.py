@@ -1,15 +1,19 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func
+from sqlalchemy import func, literal
+from sqlalchemy.types import Numeric
 from sqlalchemy.orm.exc import NoResultFound
 import pandas as pd
 import sys
 import scrape as sc
+
+OUTLIER = 8000
 
 db = SQLAlchemy()
 
 def init_app(app):
     db.init_app(app)
 
+# The main table of all listings
 class Listing(db.Model):
     __tablename__ = 'listings'
     id          = db.Column(db.Integer, primary_key=True)
@@ -23,18 +27,6 @@ class Listing(db.Model):
     item_id     = db.Column(db.Integer, db.ForeignKey('items.id'), nullable=False)
     item        = db.relationship('Item', backref=db.backref('listings', lazy=True))
 
-    # Retreive new listings from kijiji and put in the database
-    # If items is None, get all new listings, else only for the items in the list.
-    def update(item):
-        i = Item.get(item)
-        start_date = i.update_time
-        if start_date is not None:
-            start_date = start_date.date()
-        df = sc.scrape(item, start_date=start_date)
-        Listing.from_df(df)
-        i.update_time = db.func.current_timestamp()
-        db.session.commit()
-
     # Add contents of a database into the listings table
     def from_df(df):
         if df is not None:
@@ -47,7 +39,7 @@ class Listing(db.Model):
     # Create dataframe for item listings in table
     def to_df(item, children=True, disabled=False):
         dfs = []
-        q = Listing.query.filter(Listing.item_id == item.id)
+        q = Listing.query.filter(Listing.item_id == item.id).filter(Listing.price < literal(OUTLIER))
         dfs.append(pd.read_sql(q.statement, db.session.bind))
         if children:
             for child in item.children():
@@ -55,18 +47,24 @@ class Listing(db.Model):
                     dfs.append(Listing.to_df(child, children=True, disabled=disabled))
         return pd.concat(dfs)
 
-    def item_date_count():
-        q = Listing.query.with_entities(
-            Listing.item_id,
-            Listing.post_date,
-            func.count().label('count')
-            ).group_by(Listing.item_id, Listing.post_date)
+    # return summary statistics of #listings for each (item, date) pair
+    def item_date_count_log():
+        q = Listing.query.filter(Listing.price < literal(OUTLIER)) \
+            .with_entities(
+                Listing.item_id,
+                Listing.post_date,
+                func.count().label('count'),
+                func.sum(func.log(Listing.price + literal(25.0))).label('logsum')) \
+            .group_by(Listing.item_id, Listing.post_date)
         return pd.read_sql(q.statement, db.session.bind)
+
 
     def __repr__(self):
         return f'Listing: {self.id}'
 
 
+
+# A table of item types and when they were last scraped
 class Item(db.Model):
     __tablename__ = 'items'
     id          = db.Column(db.Integer, primary_key=True)
@@ -79,12 +77,31 @@ class Item(db.Model):
         self.name = item.name
         self.category = item.category().name
 
+    # Get database row for an item
     def get(item):
         if Item.query.filter(Item.id == item.id).count() != 1:
             i = Item(item)
             db.session.add(i)
             db.session.commit()
         return Item.query.filter(Item.id == item.id).one()
+
+    # The date of the last update
+    def last_date(self):
+        ld = self.update_time
+        if ld is not None:
+            ld = ld.date()
+        return ld
+
+    # put listings from df into the database and update the update_time
+    def update(self, df):
+        Listing.from_df(df)
+        self.update_time = db.func.current_timestamp()
+        db.session.commit()
+
+    # If item hasn't been scraped recently
+    def is_old(self, delta):
+        update_time = self.update_time
+        return update_time is None or datetime.datetime.now() - update_time >= delta
 
     def __repr__(self):
         return f'Item: {self.id}, {self.name}'

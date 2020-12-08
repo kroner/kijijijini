@@ -36,18 +36,84 @@
     </div>
   </section>
 
+  <section id="data" class="bg-light">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 mx-auto">
+          <h4>About the data:</h4>
+          <p>
+            kijijijini scrapes listings by querying each of the roughly
+            200 categories of items in the "Buy & Sell" section of <a href="https://www.kijiji.ca/b-buy-sell/city-of-toronto/c10l1700273">Kijiji</a>
+            for the Toronto area.  We skip sponsored listings and listings that don't offer a specific price.
+            There hasn't been an API for Kijiji for many years, so we scrape from the
+            results pages, which have 40 ads per page.  This is a slow process
+            because Kijiji takes a long time to respond to each request (~5
+            seconds), rate-limits responses, and is generally unreliable.  But we
+            persevere!
+          </p>
+          <p>
+            Only 100 pages (4000 listings)
+            are accessible for a given query, even though some categories have 10,000s
+            of listings at any given time (listings expire after 60 days if they aren't
+            taken down by the seller).  More specific searches (using keywords)
+            could access older results but I don't know of a good systematic way to
+            do this.  With frequent scrapes, this shouldn't be a problem.
+          </p>
+          <p>
+            Because listings are scraped from the search results page and not the
+            individual listings pages, only the truncated descriptions are saved
+            (up to 200 characters).  Descriptions entered by a user into kijijijini are also
+            truncated this way.  It's a good rule of thumb to put the important info
+            in the first 200 characters since that's all that will appear in the
+            search page preview.  Hook them before they click!
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="model">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 mx-auto">
+          <h4>About the model:</h4>
+          <p>
+            kijijijini uses a linear model to predict price based on the category of
+            item, and certain words appearing in the title and in the description of
+            a listing.  There is an overhead cost to a buyer to view and retreive an item
+            in person (most sellers do not offer delivery).  With some experimentation,
+            $25 seems to be roughly the right amount.  The model predicts
+            the logarithm of the price plus this overhead amount.
+          </p>
+          <p>
+            Note that the prediction
+            isn't a guess of what the item is truly worth, or the maximum price it will sell
+            for, but the amount that is most in line with previous listings on the site,
+            whether they were priced correctly or not.  There is also a lot that the
+            model doesn't take into account (e.g. how nice an item looks in the photos).
+            So don't be discouraged if it spits out a price for your item that's lower
+            than you think it's worth.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="me" class="bg-light">
     <div class="container">
       <div class="row">
         <div class="col-lg-8 mx-auto">
           <h4>About me:</h4>
           <p>
-            kijijijini is written by me, Robert Krone.  I'm a mathematician and human being.
-            I made this as the Capstone project for the Data Incubator Fall 2020 program.
-            Feel free to grab the code from github and do whatever you want with it.
+            kijijijini is written by me, Robert Krone.  I'm a mathematician and nice person.
+            I made this as the Capstone project for
+            <a href="https://www.thedataincubator.com/fellowship.html">the Data Incubator
+            Fall 2020 Fellowship Program</a>.
+            Feel free to grab <a href="https://github.com/kroner/kijijijini">the code from github</a>
+            and do whatever you want with it.
           </p>
           <p>
-            Have fun!
+            glhf
           </p>
         </div>
       </div>

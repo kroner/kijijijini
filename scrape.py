@@ -165,7 +165,7 @@ def scrape(item, start_date=None, location=LOCATION, start_page=1, end_page=PAGE
 				print(f' current posted: {listings}\n ', end='', flush=True, file=sys.stdout)
 		if df is not None:
 			page_dfs.append(df)
-			if start_date is not None and df['post_date'].iloc[-1] < start_date - datetime.timedelta(days=4):
+			if start_date is not None and df['post_date'].iloc[-1] < start_date - datetime.timedelta(days=1):
 				break
 		page += 1
 	print('', file=sys.stdout)
@@ -188,7 +188,6 @@ def csv_to_df(item, save_path=SAVE_PATH):
 	df['retreived'] = df['retreived'].apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f'))
 	df['post_date'] = df.apply(lambda row: post_date(row['retreived'], row['time_offset']), axis=1)
 	return df[['url','price','title','description','location','post_date','retreived','item_id']]
-
 
 # find the post date for listing retreived at t and with time string st
 def post_date(t, st):

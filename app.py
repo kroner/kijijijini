@@ -2,7 +2,6 @@ import os
 import sys
 from flask import Flask, render_template, request, redirect
 import json
-import altair as alt
 from collections import defaultdict
 # init flask app instance
 app = Flask(__name__)
@@ -62,27 +61,8 @@ def data():
 		X['item'] = item.name
 		X['category'] = item.name
 
-	if request.method == 'POST':
-		df = database.Listing.item_date_count()
-		if item == categories.buy_sell:
-			df['item'] = df['item_id'].apply(lambda x : categories.by_id(x).category().name)
-			df2 = df[['item', 'post_date', 'count']].groupby(['item', 'post_date']).sum().reset_index()
-		else:
-			df2 = df[df['item_id'].apply(
-				lambda x : categories.by_id(x).category() == item or categories.by_id(x) == item
-				)].copy()
-			df2['item'] = df2['item_id'].apply(lambda x : categories.by_id(x).name)
-		df2['post_str'] = df2['post_date'].apply(lambda x : x.isoformat())
-		data = df2[['item', 'post_str', 'count']]
-		chart = alt.Chart(data).mark_bar().encode(
-			alt.X('post_str'),
-			alt.Y('count'),
-			color='item'
-		).properties(width=600, height=400)
-		chart.save('static/charts/hist-chart-' + item.name + '.json')
-
+	commands.chart(X['item'])
 	Y = select_data(include_all=True)
-	print([item.name for item in categories.items(disabled=True) if item.disabled])
 	return render_template('data.html', **X, **Y)
 
 
@@ -92,6 +72,7 @@ def about():
 
 
 # Data for category drop-down forms
+# If include_all, each drop-down has an 'All' option
 def select_data(include_all=False):
 	X = dict()
 	category_data = []
