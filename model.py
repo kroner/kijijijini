@@ -114,9 +114,9 @@ def print_nice(coefs,file=sys.stdout):
 
 
 # read in all the data for a category and return X and y
-def prepare_cat_data(cat):
+def prepare_cat_data(cat, sample=None):
     price_func = lambda x : math.log(x+25)
-    data = Listing.to_df(cat, children=True)
+    data = Listing.to_df(cat, children=True, sample=sample)
     if len(data.index) == 0:
         return (None, None)
     X = data.drop('price', axis=1)
@@ -193,12 +193,6 @@ class CatModel():
 
 
 
-def train(cat):
-    est = CatModel(cat)
-    est.fit(print_r2=True)
-    return None
-
-
 # predict the price for a dict with 'title', 'description', 'item'
 def predict_price(Xdict):
     if 'item' in Xdict:
@@ -256,7 +250,7 @@ def some_stupid_test_stuff(est):
 
 if __name__ == '__main__':
     est = CatModel(categories.by_name('furniture'))
-    est.train()
+    est.load()
     title = '18" tall metal bed frame'
     desc = 'Selling an 18" tall metal bed frame. Comes apart at corners for easy assembly. Great for condo as the height is perfect for under bed storage bins or luggate. Frame is in near perfect condition.  Comes with wooden slats.'
     sample_X = {'title':title, 'description':desc, 'item':'bed-mattress'}

@@ -8,6 +8,9 @@ import model
 import chart as ch
 from database import db, Listing, Item
 
+OLD = 20
+SAMPLE_SIZE = 30000
+
 # Creates database table
 @click.argument("table")
 def create(table):
@@ -41,7 +44,7 @@ def read_csvs():
 # Scrape new listings from kijiji and add them to the database
 @click.argument("cat")
 def scrape(cat):
-    delta = datetime.timedelta(hours=20) # interval for deciding if results are old
+    delta = datetime.timedelta(hours=OLD) # interval for deciding if results are old
     if cat == 'all' or cat == 'all-old':
         items = categories.items(disabled=True)
     else:
@@ -65,7 +68,8 @@ def train(cat):
     else:
         cats = [categories.by_name(cat)]
     for cat in cats:
-        model.train(cat)
+        est = model.CatModel(cat)
+        est.fit(print_r2=True)
 
 
 @click.argument('cat')
@@ -80,7 +84,7 @@ def chart(cat):
         print(cat.name + ' charts...', end='')
         ch.histogram(cat)
         ch.prices(cat)
-        ch.residuals(cat)
+        ch.residuals(cat, sample=SAMPLE_SIZE)
         print('done')
 
 

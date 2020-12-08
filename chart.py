@@ -43,7 +43,7 @@ def histogram(item):
     chart.save('static/charts/hist-chart-' + item.name + '.json')
 
 
-def residuals(item):
+def residuals(item, sample=None):
     if item == categories.buy_sell:
         cats = categories.categories()
     else:
@@ -52,7 +52,7 @@ def residuals(item):
     for cat in cats:
         est = model.CatModel(cat)
         est.load()
-        (X,y) = model.prepare_cat_data(cat)
+        (X,y) = model.prepare_cat_data(cat, sample=sample)
         if X is None:
             continue
         X['residual'] = y - est.predict(X)
