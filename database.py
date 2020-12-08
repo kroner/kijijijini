@@ -4,7 +4,8 @@ from sqlalchemy.types import Numeric
 from sqlalchemy.orm.exc import NoResultFound
 import pandas as pd
 import sys
-import scrape as sc
+import datetime
+
 
 OUTLIER = 8000
 
