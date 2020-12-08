@@ -79,8 +79,6 @@ class Listing(db.Model):
             .group_by(Listing.item_id, Listing.post_date)
         return pd.read_sql(q.statement, db.session.bind)
 
-    def count(item):
-
 
     def __repr__(self):
         return f'Listing: {self.id}'
