@@ -130,6 +130,6 @@ dmypy.json
 
 
 config.py
-# static/charts/*
+static/charts/*
 models/*
 local_database.db
