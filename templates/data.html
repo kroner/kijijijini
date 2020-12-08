@@ -45,8 +45,6 @@
           <h4>Average adjusted price (log scale):</h4>
           <div id="price-chart" style="align:center"></div>
           <br>
-          <h4>Average residuals (log scale):</h4>
-          <div id="residual-chart" style="align:center"></div>
         </div>
       </div>
     </div>
@@ -64,8 +62,6 @@
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-embed@3"></script>
 
   <script>
-    var residual_spec = "{{ url_for('static',filename='charts/residual-chart-') }}{{ item }}.json";
-    vegaEmbed("#residual-chart", residual_spec);
     var price_spec = "{{ url_for('static',filename='charts/price-chart-') }}{{ item }}.json";
     vegaEmbed("#price-chart", price_spec);
     var hist_spec = "{{ url_for('static',filename='charts/hist-chart-') }}{{ item }}.json";

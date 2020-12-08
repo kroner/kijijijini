@@ -84,7 +84,7 @@ def chart(cat):
         print(cat.name + ' charts...', end='')
         ch.histogram(cat)
         ch.prices(cat)
-        ch.residuals(cat, sample=SAMPLE_SIZE)
+        #ch.residuals(cat, sample=SAMPLE_SIZE)
         print('done')
 
 
