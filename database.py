@@ -81,7 +81,8 @@ class Listing(db.Model):
                 func.count().label('count'),
                 func.sum(Listing.price + literal(25.0)).label('logsum'),
             ).group_by(Listing.item_id, Listing.post_date)
-        return pd.read_sql(q.statement, db.session.bind)
+        df = pd.read_sql(q.statement, db.session.bind)
+        return df[df['post_date'] > datetime.date.fromisoformat('2020-01-01')]
 
 
     def __repr__(self):
