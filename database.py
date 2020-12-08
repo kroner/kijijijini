@@ -41,23 +41,23 @@ class Listing(db.Model):
     # Create dataframe for item listings in table
     def to_df(item, children=True, disabled=False, sample=None):
         dfs = []
-        if os.environ.get('FLASK_ENV') != 'development' and sample is not None:
-            n = Listing.query.filter(Listing.item_id == item.id).filter(Listing.price < literal(OUTLIER)).count()
-            p = min(sample/n, 1)
-            sql = f'''
-                SELECT *
-                FROM listings TABLESAMPLE BERNOULLI {p}
-                WHERE item_id = {item.id} AND price < {OUTLIER};
-                '''
-        else:
-            sql = f'''
-                SELECT *
-                FROM listings
-                WHERE item_id = {item.id} AND price < {OUTLIER};
-                '''
-        dfs.append(pd.read_sql(sql, db.session.bind, parse_dates=['post_date']))
-        #q = Listing.query.filter(Listing.item_id == item.id).filter(Listing.price < literal(OUTLIER))
-        #dfs.append(pd.read_sql(q.statement, db.session.bind))
+        #if os.environ.get('FLASK_ENV') != 'development' and sample is not None:
+        #    n = Listing.query.filter(Listing.item_id == item.id).filter(Listing.price < literal(OUTLIER)).count()
+        #    p = min(sample/n, 1)
+        #    sql = f'''
+        #        SELECT *
+        #        FROM listings TABLESAMPLE BERNOULLI {p}
+        #        WHERE item_id = {item.id} AND price < {OUTLIER};
+        #        '''
+        #else:
+        #    sql = f'''
+        #        SELECT *
+        #        FROM listings
+        #        WHERE item_id = {item.id} AND price < {OUTLIER};
+        #        '''
+        #dfs.append(pd.read_sql(sql, db.session.bind, parse_dates=['post_date']))
+        q = Listing.query.filter(Listing.item_id == item.id).filter(Listing.price < literal(OUTLIER))
+        dfs.append(pd.read_sql(q.statement, db.session.bind))
         if children:
             for child in item.children():
                 if child != item:
@@ -70,10 +70,10 @@ class Listing(db.Model):
             Listing.item_id,
             Listing.post_date,
             func.count().label('count'),
-            func.sum(func.log(Listing.price + literal(25.0))).label('logsum'),
+            func.sum(Listing.price + literal(25.0)).label('logsum'),
             ]
-        if os.environ.get('FLASK_ENV') == 'development':
-            cols[-1] = func.sum(Listing.price + literal(25.0)).label('logsum')
+        #if os.environ.get('FLASK_ENV') != 'development':
+        #    cols[-1] = func.sum(func.log(Listing.price + literal(25.0))).label('logsum')
         q = Listing.query.filter(Listing.price < literal(OUTLIER)) \
             .with_entities(*cols) \
             .group_by(Listing.item_id, Listing.post_date)

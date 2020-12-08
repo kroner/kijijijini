@@ -7,29 +7,39 @@ import categories
 from database import Listing
 import model
 
-def prepare_chart_data(df, item, aggregate=True):
-    def cat_selector(x):
-        cat = categories.by_id(x)
-        return cat.category() == item or cat == item
+def prepare_chart_data(df, aggregate=True):
+    df['date'] = df['post_date'].apply(lambda x : x.isoformat())
+    df['cat_id'] = df['item_id'].apply(lambda x : categories.by_id(x).category().id)
+    df_items = df[['item_id', 'date', 'count', 'logsum']].groupby(['item_id', 'date']).sum().reset_index()
+    df_cats = df[['cat_id', 'date', 'count', 'logsum']].groupby(['cat_id', 'date']).sum().reset_index()
+    df_all = df[['date', 'count', 'logsum']].groupby(['date']).sum().reset_index()
 
-    if item == categories.buy_sell:
-        df['cat_id'] = df['item_id'].apply(lambda x : categories.by_id(x).category().id)
-        if aggregate:
-            df2 = df[['cat_id', 'post_date', 'count', 'logsum']].groupby(['cat_id', 'post_date']).sum().reset_index()
-        else:
-            df2 = df.copy()
-    else:
-        df['cat_id'] = df['item_id']
-        df2 = df[df['cat_id'].apply(cat_selector)].copy()
+    df_items['cat'] = df_items['item_id'].apply(lambda x : categories.by_id(x).category().string)
+    df_items['item'] = df_items['item_id'].apply(lambda x : categories.by_id(x).string)
+    df_items['price'] = df_items['logsum']/df_items['count']
 
-    df2['date'] = df2['post_date'].apply(lambda x : x.isoformat())
-    df2['item'] = df2['cat_id'].apply(lambda x : categories.by_id(x).string)
-    return df2
+    df_cats['cat'] = categories.buy_sell.string
+    df_cats['item'] = df_cats['cat_id'].apply(lambda x : categories.by_id(x).string)
+    df_cats['price'] = df_cats['logsum']/df_cats['count']
+
+    df_all['cat'] = categories.buy_sell.string
+    df_all['item'] = categories.buy_sell.string
+    df_all['price'] = df_cats['logsum']/df_cats['count']
+    return (df_items, df_cats, df_all)
 
 
-def histogram(item):
-    df = prepare_chart_data(Listing.item_date_count_log(), item)
-    data = df[['item', 'date', 'count']]
+def histogram():
+    (df_items, df_cats, df_all) = prepare_chart_data(Listing.item_date_count_log())
+    data = df_cats[['item', 'date', 'count']]
+    make_hist(data, categories.buy_sell)
+    for cat in categories.categories():
+        data = df_items[df_items['cat'] == cat.string][['item', 'date', 'count']]
+        make_hist(data, cat)
+    for item in categories.items():
+        data = df_items[df_items['item_id'] == item.id][['item', 'date', 'count']]
+        make_hist(data, item)
+
+def make_hist(data, item):
     chart = alt.Chart(data).mark_bar().encode(
         x='date:T',
         y='count:Q',
@@ -40,10 +50,10 @@ def histogram(item):
         os.makedirs('static/charts', exist_ok=True)
     except FileExistsError:
         pass
-    chart.save('static/charts/hist-chart-' + item.name + '.json')
+    chart.save(f'static/charts/hist-chart-{item.name}.json')
 
-
-def residuals(item, sample=None):
+'''
+def residuals(sample=None):
     if item == categories.buy_sell:
         cats = categories.categories()
     else:
@@ -56,7 +66,7 @@ def residuals(item, sample=None):
         if X is None:
             continue
         X['residual'] = y - est.predict(X)
-        Xs.append(prepare_chart_data(X.copy(), item, aggregate=False))
+        Xs.append(prepare_chart_data(X.copy(), aggregate=False))
     if not Xs:
         return None
     X_prep = pd.concat(Xs)
@@ -70,31 +80,31 @@ def residuals(item, sample=None):
     except FileExistsError:
         pass
     chart.save('static/charts/residual-chart-' + item.name + '.json')
+'''
+
+def prices():
+    (df_items, df_cats, df_all) = prepare_chart_data(Listing.item_date_count_log())
+    print(categories.buy_sell.name + ' charts...', end='')
+    data = df_cats[['item', 'date', 'price']]
+    data_sum = df_all[['item', 'date', 'price']]
+    rolling_mean_chart(data, data_sum, 'price', categories.buy_sell)
+    print(' done')
+    make_hist(data, categories.buy_sell)
+    for cat in categories.categories():
+        print(cat.name + ' charts...', end='')
+        data = df_items[df_items['cat'] == cat.string][['item', 'date', 'price']]
+        data_sum = df_cats[df_items['item'] == cat.string][['item', 'date', 'price']]
+        rolling_mean_chart(data, data_sum, 'price', cat)
+        print(' done')
+    for item in categories.items():
+        print(item.name + ' charts...', end='')
+        data = df_items[df_items['item'] == item.string][['item', 'date', 'price']]
+        rolling_mean_chart(data, data, 'price', item)
+        print(' done')
 
 
-def prices(item):
-    df = prepare_chart_data(Listing.item_date_count_log(), item)
-    if len(df.index) == 0:
-        return None
-    df_sum = df[['date', 'count', 'logsum']].groupby(['date']).sum().reset_index()
-    f = lambda row : 0 if row['count'] == 0 else row['logsum']/row['count']
-    df['log_price'] = df.apply(f, axis=1)
-    df_sum['log_price'] = df_sum.apply(f, axis=1)
 
-    data = df[['item', 'date', 'log_price']]
-    data_sum = df_sum[['date', 'log_price']]
-
-    chart = rolling_mean_chart(data, data_sum, 'log_price')
-
-    try:
-        os.makedirs('static/charts', exist_ok=True)
-    except FileExistsError:
-        pass
-    chart.save('static/charts/price-chart-' + item.name + '.json')
-
-
-
-def rolling_mean_chart(data, data_sum, y):
+def rolling_mean_chart(data, data_sum, y, item):
     item_chart = alt.Chart(data).mark_line().transform_window(
         rolling_mean='mean(' + y + ')',
         frame=[-4, 3]
@@ -114,4 +124,10 @@ def rolling_mean_chart(data, data_sum, y):
 
     if len(data.index) != len(data_sum.index):
         chart = item_chart + chart
-    return chart.properties(width=600, height=400)
+    chart = chart.properties(width=600, height=400)
+
+    try:
+        os.makedirs('static/charts', exist_ok=True)
+    except FileExistsError:
+        pass
+    chart.save(f'static/charts/{y}-chart-{item.name}.json')

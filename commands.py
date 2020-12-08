@@ -71,21 +71,10 @@ def train(cat):
         est = model.CatModel(cat)
         est.fit(print_r2=True)
 
-
-@click.argument('cat')
-def chart(cat):
-    if cat == 'all':
-        cats = [categories.buy_sell]
-        cats.extend(categories.categories())
-        cats.extend(categories.items())
-    else:
-        cats = [categories.by_name(cat)]
-    for cat in cats:
-        print(cat.name + ' charts...', end='')
-        ch.histogram(cat)
-        ch.prices(cat)
-        #ch.residuals(cat, sample=SAMPLE_SIZE)
-        print('done')
+def chart():
+    ch.histogram()
+    ch.prices()
+    #ch.residuals(sample=SAMPLE_SIZE)
 
 
 
