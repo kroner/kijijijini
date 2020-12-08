@@ -89,14 +89,14 @@ def prices(item):
     (df_items, df_cats) = prepare_chart_data(Listing.item_date_count_log(), item)
     if item == categories.buy_sell:
         data = df_items[['item', 'date', 'price']]
-        data_sum = df_cats[['item', 'date', 'price']]
+        data_sum = df_cats[['date', 'price']]
         rolling_mean_chart(data, data_sum, 'price', categories.buy_sell)
     elif item == item.category():
         data = df_items[df_items['cat'] == item.string][['item', 'date', 'price']]
-        data_sum = df_cats[df_items['item'] == item.string][['item', 'date', 'price']]
+        data_sum = df_cats[df_cats['item'] == item.string][['date', 'price']]
         rolling_mean_chart(data, data_sum, 'price', item)
     else:
-        data = df_items[df_items['item'] == item.string][['item', 'date', 'price']]
+        data = df_items[df_items['item'] == item.string][['date', 'price']]
         rolling_mean_chart(data, data, 'price', item)
 
 
