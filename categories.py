@@ -20,7 +20,7 @@ class Category():
 	# if disabled is False, ignore categories with disabled flag set to True
 	def children(self, disabled=False):
 		if self._children:
-			return [c for c in self._children if (not c.disabled) or disabled)]
+			return [c for c in self._children if (not c.disabled) or disabled]
 		return [self]
 
 	def category(self):
