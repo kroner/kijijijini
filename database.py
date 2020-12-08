@@ -75,8 +75,12 @@ class Listing(db.Model):
         #if os.environ.get('FLASK_ENV') != 'development':
         #    cols[-1] = func.sum(func.log(Listing.price + literal(25.0))).label('logsum')
         q = Listing.query.filter(Listing.price < literal(OUTLIER)) \
-            .with_entities(*cols) \
-            .group_by(Listing.item_id, Listing.post_date)
+            .with_entities(
+                Listing.item_id,
+                Listing.post_date,
+                func.count().label('count'),
+                func.sum(Listing.price + literal(25.0)).label('logsum'),
+            ).group_by(Listing.item_id, Listing.post_date)
         return pd.read_sql(q.statement, db.session.bind)
 
 

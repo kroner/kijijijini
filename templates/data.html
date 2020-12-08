@@ -62,9 +62,9 @@
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm//vega-embed@3"></script>
 
   <script>
-    var price_spec = "{{ url_for('static',filename='charts/price-chart-') }}{{ item }}.json";
+    var price_spec = "{{ url_for('static', filename='') }}charts/price-chart-{{ item }}.json";
     vegaEmbed("#price-chart", price_spec);
-    var hist_spec = "{{ url_for('static',filename='charts/hist-chart-') }}{{ item }}.json";
+    var hist_spec = "{{ url_for('static', filename='') }}charts/hist-chart-{{ item }}.json";
     vegaEmbed("#hist-chart", hist_spec);
   </script>
 {% endblock %}

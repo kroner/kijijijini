@@ -17,6 +17,7 @@ import commands
 import model
 import scrape
 import categories
+import chart
 # setup all our dependencies, for now only database using application factory pattern
 database.init_app(app)
 commands.init_app(app)
@@ -61,6 +62,8 @@ def data():
 		X['item'] = item.name
 		X['category'] = item.name
 
+	chart.histogram(item)
+	chart.prices(item)
 	Y = select_data(include_all=True)
 	return render_template('data.html', **X, **Y)
 
