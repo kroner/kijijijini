@@ -33,7 +33,11 @@ def histogram(item):
     df = prepare_chart_data(Listing.item_date_count_log(), item)
     data = df[['item', 'date', 'count']]
     chart = alt.Chart(data).mark_bar().encode(
-        x=alt.X('date:T', axis=alt.Axis(title='Post Date')),
+        x=alt.X('date:T', axis=alt.Axis(title='Post Date'),
+        scale=alt.Scale(
+            domain=('2020-08-10', datetime.datetime.now().date().isoformat()),
+            clamp=True
+        )),
         y=alt.Y('count:Q', axis=alt.Axis(title='Number of Posts')),
         color='item'
     ).properties(width=600, height=400)
@@ -108,7 +112,11 @@ def rolling_mean_chart(data, data_sum, y):
         rolling_mean=f'mean({y})',
         frame=[-4, 3]
     ).encode(
-        x=alt.X('date:T', axis=alt.Axis(title='Post Date')),
+        x=alt.X('date:T', axis=alt.Axis(title='Post Date'),
+        scale=alt.Scale(
+            domain=('2020-08-10', datetime.datetime.now().date().isoformat()),
+            clamp=True
+        )),
         y=alt.Y('rolling_mean:Q', axis=alt.Axis(title='Average Price')),
     )
 
