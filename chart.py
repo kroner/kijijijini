@@ -36,6 +36,10 @@ def histogram(item):
         y='count:Q',
         color='item'
     ).properties(width=600, height=400)
+    try:
+        os.makedirs('static/charts')
+    except FileExistsError:
+        pass
     chart.save('static/charts/hist-chart-' + item.name + '.json')
 
 
