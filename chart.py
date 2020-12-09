@@ -52,6 +52,10 @@ def prices(item):
 
     chart = rolling_mean_chart(data, data_sum, 'log_price')
 
+    try:
+        os.makedirs('static/charts')
+    except FileExistsError:
+        pass
     chart.save('static/charts/price-chart-' + item.name + '.json')
 
 
@@ -75,6 +79,10 @@ def residuals(item):
 
     chart = rolling_mean_chart(data, data_sum, 'residual')
 
+    try:
+        os.makedirs('static/charts')
+    except FileExistsError:
+        pass
     chart.save('static/charts/residual-chart-' + item.name + '.json')
 
 
@@ -100,4 +108,8 @@ def rolling_mean_chart(data, data_sum, y):
 
     if len(data.index) != len(data_sum.index):
         chart = item_chart + chart
+    try:
+        os.makedirs('static/charts')
+    except FileExistsError:
+        pass
     return chart.properties(width=600, height=400)
