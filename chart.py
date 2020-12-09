@@ -11,6 +11,7 @@ def prepare_chart_data(df, item, aggregate=True):
     df = df.dropna()
     df = df[datetime.date.fromisoformat('2020-08-10') < df['post_date']]
     df['date'] = df['post_date'].apply(lambda x : x.isoformat())
+    print(sorted(df['date'].unique()))
     df['cat_id'] = df['item_id'].apply(lambda x : categories.by_id(x).category().id)
     df_items = df[['item_id', 'date', 'count', 'logsum']].groupby(['item_id', 'date']).sum().reset_index()
     df_cats = df[['cat_id', 'date', 'count', 'logsum']].groupby(['cat_id', 'date']).sum().reset_index()
