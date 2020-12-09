@@ -56,7 +56,7 @@ def items(disabled=False):
 
 #############################################
 
-disabled_list = ['free-stuff', 'garage-sale-yard-sale', 'clothing-lot', 'furniture-lot', 'baby-lot']
+disabled_list = ['free-stuff', 'garage-sale-yard-sale', 'buy-sell-other', 'clothing-lot', 'furniture-lot', 'baby-lot']
 
 buy_sell = Category('buy-sell', 10, "All")
 
