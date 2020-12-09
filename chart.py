@@ -15,13 +15,14 @@ def prepare_chart_data(df, item, aggregate=True):
 
     if item == categories.buy_sell:
         df['cat_id'] = df['item_id'].apply(lambda x : categories.by_id(x).category().id)
-        if aggregate:
-            df2 = df[['cat_id', 'post_date', 'count', 'logsum']].groupby(['cat_id', 'post_date']).sum().reset_index()
-        else:
-            df2 = df.copy()
     else:
         df['cat_id'] = df['item_id']
-        df2 = df[df['cat_id'].apply(cat_selector)].copy()
+        df = df[df['cat_id'].apply(cat_selector)]
+
+    if aggregate:
+        df2 = df[['cat_id', 'post_date', 'count', 'logsum']].groupby(['cat_id', 'post_date']).sum().reset_index()
+    else:
+        df2 = df.copy()
 
     df2['date'] = df2['post_date'].apply(lambda x : x.isoformat())
     df2['item'] = df2['cat_id'].apply(lambda x : categories.by_id(x).string)
@@ -32,15 +33,15 @@ def histogram(item):
     df = prepare_chart_data(Listing.item_date_count_log(), item)
     data = df[['item', 'date', 'count']]
     chart = alt.Chart(data).mark_bar().encode(
-        x='date:T',
-        y='count:Q',
+        x=alt.X('date:T', axis=alt.Axis(title='Post Date')),
+        y=alt.Y('count:Q', axis=alt.Axis(title='Number of Posts')),
         color='item'
     ).properties(width=600, height=400)
     try:
         os.makedirs('static/charts')
     except FileExistsError:
         pass
-    chart.save('static/charts/hist-chart-' + item.name + '.json')
+    chart.save(f'static/charts/hist-chart-{item.name}.json')
 
 
 def prices(item):
@@ -49,19 +50,19 @@ def prices(item):
         return None
     df_sum = df[['date', 'count', 'logsum']].groupby(['date']).sum().reset_index()
     f = lambda row : 0 if row['count'] == 0 else row['logsum']/row['count']
-    df['log_price'] = df.apply(f, axis=1)
-    df_sum['log_price'] = df_sum.apply(f, axis=1)
+    df['price'] = df.apply(f, axis=1)
+    df_sum['price'] = df_sum.apply(f, axis=1)
 
-    data = df[['item', 'date', 'log_price']]
-    data_sum = df_sum[['date', 'log_price']]
+    data = df[['item', 'date', 'price']]
+    data_sum = df_sum[['date', 'price']]
 
-    chart = rolling_mean_chart(data, data_sum, 'log_price')
+    chart = rolling_mean_chart(data, data_sum, 'price')
 
     try:
         os.makedirs('static/charts')
     except FileExistsError:
         pass
-    chart.save('static/charts/price-chart-' + item.name + '.json')
+    chart.save(f'static/charts/price-chart-{item.name}.json')
 
 
 def residuals(item):
@@ -88,14 +89,14 @@ def residuals(item):
         os.makedirs('static/charts')
     except FileExistsError:
         pass
-    chart.save('static/charts/residual-chart-' + item.name + '.json')
+    chart.save(f'static/charts/residual-chart-{item.name}.json')
 
 
 
 
 def rolling_mean_chart(data, data_sum, y):
     item_chart = alt.Chart(data).mark_line().transform_window(
-        rolling_mean='mean(' + y + ')',
+        rolling_mean=f'mean({y})',
         frame=[-4, 3]
     ).encode(
         x='date:T',
@@ -104,17 +105,13 @@ def rolling_mean_chart(data, data_sum, y):
     )
 
     chart = alt.Chart(data_sum).mark_line(size=5, color='black').transform_window(
-        rolling_mean='mean(' + y + ')',
+        rolling_mean=f'mean({y})',
         frame=[-4, 3]
     ).encode(
-        x='date:T',
-        y='rolling_mean:Q',
+        x=alt.X('date:T', axis=alt.Axis(title='Post Date')),
+        y=alt.Y('rolling_mean:Q', axis=alt.Axis(title='Average Price')),
     )
 
     if len(data.index) != len(data_sum.index):
         chart = item_chart + chart
-    try:
-        os.makedirs('static/charts')
-    except FileExistsError:
-        pass
     return chart.properties(width=600, height=400)
