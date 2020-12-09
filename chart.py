@@ -9,6 +9,8 @@ import model
 
 def prepare_chart_data(df, item, aggregate=True):
     df = df[df['item_id'].apply(lambda x : not categories.by_id(x).disabled)]
+    df = df[df['post_date'] > datetime.date.fromisoformat('2020-01-01')]
+    df = df.copy()
     def cat_selector(x):
         cat = categories.by_id(x)
         return cat.category() == item or cat == item
