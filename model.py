@@ -5,7 +5,7 @@ from collections import defaultdict
 import heapq
 import dill
 import os
-from datetime import datetime
+import datetime
 from sklearn import base
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import SGDRegressor
@@ -204,8 +204,8 @@ def predict_price(Xdict):
         'title' : [Xdict['title']],
         'description' : [Xdict['description']],
         'location' : [''],
-        'post_date' : [datetime.now().date()],
-        'retreived' : [datetime.now()],
+        'post_date' : [datetime.date.today()],
+        'retreived' : [datetime.datetime.now()],
         'item_id' : [item.id]
         })
     est = CatModel(item.category())

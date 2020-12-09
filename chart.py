@@ -24,18 +24,21 @@ def prepare_chart_data(df, item, aggregate=True):
     else:
         df2 = df.copy()
 
+
     df2['date'] = df2['post_date'].apply(lambda x : x.isoformat())
     df2['item'] = df2['cat_id'].apply(lambda x : categories.by_id(x).string)
     return df2
 
-
 def histogram(item):
     df = prepare_chart_data(Listing.item_date_count_log(), item)
+    print(df['date'].unique())
+    print(len(df['date'].unique()))
+    print(len(df.index))
     data = df[['item', 'date', 'count']]
     chart = alt.Chart(data).mark_bar().encode(
         x=alt.X('date:T', axis=alt.Axis(title='Post Date'),
         scale=alt.Scale(
-            domain=('2020-08-10', datetime.datetime.now().date().isoformat()),
+            domain=('2020-08-10', datetime.date.today().isoformat()),
             clamp=True
         )),
         y=alt.Y('count:Q', axis=alt.Axis(title='Number of Posts')),
@@ -114,7 +117,7 @@ def rolling_mean_chart(data, data_sum, y):
     ).encode(
         x=alt.X('date:T', axis=alt.Axis(title='Post Date'),
         scale=alt.Scale(
-            domain=('2020-08-10', datetime.datetime.now().date().isoformat()),
+            domain=('2020-08-10', datetime.date.today().isoformat()),
             clamp=True
         )),
         y=alt.Y('rolling_mean:Q', axis=alt.Axis(title='Average Price')),
