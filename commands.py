@@ -71,26 +71,13 @@ def train(cat):
         est = model.CatModel(cat)
         est.fit(print_r2=True)
 
-#def chart():
-#    ch.histogram()
-#    ch.prices()
-#    ch.residuals(sample=SAMPLE_SIZE)
-
-
-
-def update():
-    scrape('all-old')
-    train('all')
-    #chart('all')
 
 def init_app(app):
     commands = [
         create,
         #drop,
         scrape,
-        update,
         train,
-        #chart,
         ]
     for command in commands:
         app.cli.add_command(app.cli.command()(command))

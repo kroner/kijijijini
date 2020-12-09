@@ -416,7 +416,7 @@ for tup in category_list:
 
 for cat in category_dict:
 	for tup in category_dict[cat]:
-		disabled = tup[0] in disabled_list
+		disabled = tup[0] in disabled_list or cat in disabled_list
 		Category(*tup, parent=by_name(cat), disabled=disabled)
 
 #print(len([item.name for item in items(disabled=True) if item not in items()]))
