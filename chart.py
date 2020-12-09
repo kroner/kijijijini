@@ -44,8 +44,10 @@ def histogram(item):
         make_hist(data, item)
 
 def make_hist(data, item):
-    chart = alt.Chart(data).mark_bar().encode(
-        x='date:T',
+    chart = alt.Chart(data).mark_bar(clip=True).encode(
+        alt.X('date:T',
+            scale=alt.Scale(domain=('2020-10-09', datetime.datetime.now().date().isoformat()))
+            ),
         y='count:Q',
         color='item'
     ).properties(width=600, height=400)
@@ -102,20 +104,24 @@ def prices(item):
 
 
 def rolling_mean_chart(data, data_sum, y, item):
-    item_chart = alt.Chart(data).mark_line().transform_window(
+    item_chart = alt.Chart(data).mark_line(clip=True).transform_window(
         rolling_mean='mean(' + y + ')',
         frame=[-4, 3]
     ).encode(
-        x='date:T',
+        alt.X('date:T',
+            scale=alt.Scale(domain=('2020-10-09', datetime.datetime.now().date().isoformat()))
+            ),
         y='rolling_mean:Q',
         color='item',
     )
 
-    chart = alt.Chart(data_sum).mark_line(size=5, color='black').transform_window(
+    chart = alt.Chart(data_sum).mark_line(size=5, color='black', clip=True).transform_window(
         rolling_mean='mean(' + y + ')',
         frame=[-4, 3]
     ).encode(
-        x='date:T',
+        alt.X('date:T',
+            scale=alt.Scale(domain=('2020-10-09', datetime.datetime.now().date().isoformat()))
+            ),
         y='rolling_mean:Q',
     )
 
