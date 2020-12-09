@@ -1,6 +1,7 @@
 import altair as alt
 import datetime
 import pandas as pd
+import os
 
 import categories
 from database import Listing
