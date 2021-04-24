@@ -19,3 +19,4 @@ bs4
 psycopg2
 lxml
 altair==4.1.0
+boto3
