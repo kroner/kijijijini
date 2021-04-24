@@ -59,6 +59,8 @@ def scrape(cat):
         i.update(df)
         n1 = Listing.query.filter(Listing.item_id == item.id).count()
         print(f' new listings: {n1 - n0} ({n1})', file=sys.stdout)
+        
+    train('all')
 
 # Retrain the models
 @click.argument('cat')

@@ -30,6 +30,7 @@ class Listing(db.Model):
     item        = db.relationship('Item', backref=db.backref('listings', lazy=True))
 
     # Add contents of a database into the listings table
+    @staticmethod
     def from_df(df):
         if df is not None:
             #df.to_sql(name='listings', if_exists='append', con=db.engine)
@@ -39,6 +40,7 @@ class Listing(db.Model):
             db.session.commit()
 
     # Create dataframe for item listings in table
+    @staticmethod
     def to_df(item, children=True, disabled=False, sample=None):
         dfs = []
         #if os.environ.get('FLASK_ENV') != 'development' and sample is not None:
@@ -65,6 +67,7 @@ class Listing(db.Model):
         return pd.concat(dfs)
 
     # return summary statistics of #listings for each (item, date) pair
+    @staticmethod
     def item_date_count_log():
         cols = [
             Listing.item_id,
@@ -103,6 +106,7 @@ class Item(db.Model):
         self.category = item.category().name
 
     # Get database row for an item
+    @staticmethod
     def get(item):
         if Item.query.filter(Item.id == item.id).count() != 1:
             i = Item(item)

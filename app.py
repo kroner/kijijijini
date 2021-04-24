@@ -11,6 +11,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///local_database.db'
 if os.environ.get('FLASK_ENV') != 'development':
 	app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+else:
+	print("development mode")
 
 import database
 import commands
@@ -27,7 +29,7 @@ def index():
 	X = {'category':'', 'item':'', 'title':'', 'description':'', 'url':'', 'price':'', 'price_str':'', 'sug_price':'', 'error':''}
 	X = {**X, **request.form}
 	if request.method == 'POST':
-		try:
+	#	try:
 			if request.form['form'] == 'listing':
 				X['description'] = scrape.standardize_desc(request.form['description'], 200)
 			else:
@@ -39,8 +41,8 @@ def index():
 				X['item'] = categories.by_id(X['item_id']).name
 			sug_price = model.predict_price(X)
 			X['sug_price'] = '$' + '{:.0f}'.format(sug_price)
-		except:
-			X['error'] = "Can't find listing."
+	#	except:
+	#		X['error'] = "Can't find listing."
 	if X['item'] == '':
 		X['item'] = categories.items()[0].name
 	X['category'] = categories.by_name(X['item']).category().name

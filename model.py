@@ -1,4 +1,5 @@
 import sys
+import string
 import pandas as pd
 import math
 from collections import defaultdict
@@ -6,6 +7,7 @@ import heapq
 import dill
 import os
 import datetime
+import boto3
 from sklearn import base
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import SGDRegressor
@@ -23,6 +25,11 @@ from sklearn.feature_extraction.text import HashingVectorizer
 
 import categories
 from database import Listing
+
+BUCKET_NAME = 'kijijijini'
+SAMPLE_SIZE = 100000
+MODELS_PATH = 'models/'
+
 
 class ModelTransformer(base.BaseEstimator, base.TransformerMixin):
     def __init__(self, est):
@@ -75,7 +82,7 @@ class WordEncoder(base.BaseEstimator, base.TransformerMixin):
 
 	def fit(self, X, y=None):
 		data = X.iloc[:,0].array
-		top = [('hello',1)]#top_words(data, limit=self.limit, sorted=False)
+		top = top_words(data, limit=self.limit, sorted=False)
 		#print(top[:50])
 		self.word_list = [t[0] for t in top]
 		return self
@@ -84,7 +91,7 @@ class WordEncoder(base.BaseEstimator, base.TransformerMixin):
 		data = X.iloc[:,0].array
 		Xt = list()
 		for text in data:
-			cs = [('hello', 1)]#top_words([text], word_list=self.word_list, sorted=False)
+			cs = top_words([text], word_list=self.word_list, sorted=False)
 			if self.count:
 				cs = [c[1] for c in cs]
 			else:
@@ -113,12 +120,22 @@ def print_nice(coefs,file=sys.stdout):
 	return None
 
 
+def make_model_path(s):
+    try:
+        os.makedirs(MODELS_PATH)
+    except FileExistsError:
+        pass
+    return MODELS_PATH + s
+
 # read in all the data for a category and return X and y
+# for large data sets, sample down
 def prepare_cat_data(cat, sample=None):
     price_func = lambda x : math.log(x+25)
     data = Listing.to_df(cat, children=True, sample=sample)
     if len(data.index) == 0:
         return (None, None)
+    if len(data.index) > SAMPLE_SIZE:
+        data = data.sample(n=SAMPLE_SIZE)
     X = data.drop('price', axis=1)
     X = X.drop(X.columns[0], axis=1)
     y = data['price'].apply(price_func)
@@ -161,12 +178,37 @@ class CatModel():
             ])
 
     def load(self):
+        model_path = make_model_path('est-' + self.cat.name + '.pkd')
+
         try:
-            model_path = open('models/est-' + self.cat.name + '.pkd', 'rb')
-            self.est = dill.load(model_path)
-            model_path.close()
+            with open(model_path, 'rb') as model_file:
+                self.est = dill.load(model_file)
+            return None
         except FileNotFoundError:
-            self.fit()
+            pass
+
+        try:
+            s3 = boto3.client('s3')
+            with open(model_path, 'wb') as model_file:
+                s3.download_fileobj(BUCKET_NAME, 'model_path', model_file)
+            with open(model_path, 'rb') as model_file:
+                self.est = dill.load(model_file)
+            return None
+        except:
+            pass
+        
+        self.fit()
+
+
+    def save(self):
+        model_path = make_model_path('est-' + self.cat.name + '.pkd')
+        with open(model_path, 'wb') as model_file:
+            dill.dump(self.est, model_file)
+
+        s3 = boto3.client('s3')
+        with open(model_path, "rb") as model_file:
+            s3.upload_fileobj(model_file, BUCKET_NAME, model_path)
+
 
     def fit(self, print_r2=False):
         (X, y) = prepare_cat_data(self.cat)
@@ -175,13 +217,7 @@ class CatModel():
             print('no data', file=sys.stdout)
             return None
         self.est.fit(X, y)
-        try:
-            os.makedirs('models')
-        except FileExistsError:
-            pass
-        model_path = open('models/est-' + self.cat.name + '.pkd', 'wb')
-        dill.dump(self.est, model_path)
-        model_path.close()
+        self.save()
         print('done', file=sys.stdout)
         print(' ', len(X.index), file=sys.stdout)
         if print_r2:
