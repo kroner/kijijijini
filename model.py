@@ -182,7 +182,7 @@ class CatModel():
 
         s3 = boto3.client('s3')
         with open(model_path, 'wb') as model_file:
-            s3.download_fileobj(BUCKET_NAME, 'model_path', model_file)
+            s3.download_fileobj(BUCKET_NAME, model_path, model_file)
         with open(model_path, 'rb') as model_file:
             self.est = dill.load(model_file)
         '''
@@ -196,7 +196,7 @@ class CatModel():
         try:
             s3 = boto3.client('s3')
             with open(model_path, 'wb') as model_file:
-                s3.download_fileobj(BUCKET_NAME, 'model_path', model_file)
+                s3.download_fileobj(BUCKET_NAME, model_path, model_file)
             with open(model_path, 'rb') as model_file:
                 self.est = dill.load(model_file)
             return None
